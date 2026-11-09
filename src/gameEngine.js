@@ -89,6 +89,7 @@
   let track = null;
   let weather = null;
   let audio = null;
+  let net = null;
 
   // Estados: "MENU" | "COUNTDOWN" | "RACING" | "PAUSED" | "STAGE_COMPLETE" | "FINISHED"
   let gameState = "MENU";
@@ -233,11 +234,72 @@
     );
   }
 
-  // Actualización física del jugador e IA competitiva para los otros 7 corredores
+  function lerpAngleShort(a, b, t) {
+    let diff = b - a;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    return a + diff * t;
+  }
+
+  function applyPacketToKartTarget(k, pkt) {
+    if (!k || !pkt) return;
+    k.netTarget = pkt;
+    k.netLastTime = performance.now();
+    k.trackT = pkt.trackT;
+    k.lateralOffset = pkt.lateralOffset;
+    k.lap = pkt.lap;
+    k.passedHalfway = pkt.passedHalfway;
+    k.finished = pkt.finished;
+    k.finishTime = pkt.finishTime;
+    if (pkt.bestLapTime !== null) k.bestLapTime = pkt.bestLapTime;
+    if (pkt.lastLapTime !== null) k.lastLapTime = pkt.lastLapTime;
+    k.totalProgress = pkt.totalProgress;
+  }
+
+  // Actualización física del jugador, sincronización de red P2P e IA competitiva
   function updateKartPhysics(k, dt, canMove) {
     const stageCfg = getActiveStageConfig();
     const totalStageLaps = stageCfg.laps;
     const prevSpeed = k.speed;
+
+    const isOnline = net && net.getMode() !== "OFFLINE";
+    const isRemoteSyncedKart =
+      !k.isPlayer &&
+      isOnline &&
+      (net.getMode() === "CLIENT" || net.isRacerHumanControlled(k.racer.id));
+
+    if (isRemoteSyncedKart) {
+      // ==================== KART SINCRONIZADO POR RED ONLINE (INTERPOLACIÓN + DEAD RECKONING A 60 FPS) ====================
+      if (k.netTarget && canMove) {
+        const ageSec = Math.min(0.12, Math.max(0, (performance.now() - (k.netLastTime || performance.now())) / 1000));
+        const predX = k.netTarget.x + Math.sin(k.netTarget.heading) * k.netTarget.speed * ageSec;
+        const predZ = k.netTarget.z + Math.cos(k.netTarget.heading) * k.netTarget.speed * ageSec;
+
+        k.position.x = THREE.MathUtils.lerp(k.position.x, predX, Math.min(1, dt * 14));
+        k.position.z = THREE.MathUtils.lerp(k.position.z, predZ, Math.min(1, dt * 14));
+        k.position.y = 0;
+        k.heading = lerpAngleShort(k.heading, k.netTarget.heading, Math.min(1, dt * 15));
+        k.speed = THREE.MathUtils.lerp(k.speed, k.netTarget.speed, Math.min(1, dt * 12));
+        k.steerAngle = THREE.MathUtils.lerp(k.steerAngle, k.netTarget.steerAngle, Math.min(1, dt * 14));
+        k.slipAngle = THREE.MathUtils.lerp(k.slipAngle || 0, k.netTarget.slipAngle || 0, Math.min(1, dt * 12));
+      }
+
+      k.accelG = (k.speed - prevSpeed) / Math.max(0.001, dt);
+      const { gear, rpmNorm } = computeGearAndRpm(k.speed);
+      k.visual.root.position.copy(k.position);
+      k.visual.root.rotation.y = k.heading;
+      k.visual.updateVisuals(dt, {
+        speed: k.speed,
+        steerAngle: k.steerAngle,
+        slipAngle: k.slipAngle || 0,
+        accelG: k.accelG,
+        rpmNorm,
+        gear,
+        lapTimeSec: Math.max(0, raceTime - k.lapStartTime),
+        isFirstPerson: false
+      });
+      return;
+    }
 
     if (!k.isPlayer) {
       // ==================== IA COMPETITIVA CON TRAZADA IDEAL (SIN PISAR EL PASTO) ====================
@@ -774,6 +836,14 @@
       }
       if (modal) modal.classList.remove("hidden");
     }
+
+    // Si somos el Anfitrión (HOST) en una sala online, sincronizar el fin de etapa y el orden de parrilla con todos los clientes
+    if (net && net.getMode() === "HOST") {
+      net.notifyHostStageComplete({
+        stage: currentStage,
+        gridOrderIds: currentGridOrder.map((r) => r.id)
+      });
+    }
   }
 
   const smoothCamPos = new THREE.Vector3();
@@ -992,11 +1062,23 @@
     const gridEl = document.getElementById("racer-selector-grid");
     if (!gridEl) return;
 
+    const isOnline = Boolean(net && net.getMode() !== "OFFLINE");
+
     gridEl.textContent = "";
     window.RACERS_LIST.forEach((r) => {
+      const isTakenByOther = isOnline && net.isRacerClaimedByOther(r.id);
+      const isMine = r.id === selectedRacerId;
+
       const btn = document.createElement("button");
-      btn.className = "racer-card" + (r.id === selectedRacerId ? " active" : "");
+      btn.className =
+        "racer-card" +
+        (isMine ? " active" : "") +
+        (isTakenByOther ? " racer-card-locked" : "");
       btn.setAttribute("data-racer-id", String(r.id));
+      if (isTakenByOther) {
+        btn.disabled = true;
+        btn.title = "Este corredor ya fue elegido por otro jugador en la sala";
+      }
 
       const swatch = document.createElement("div");
       swatch.className = "racer-swatch";
@@ -1015,11 +1097,28 @@
 
       const titleDiv = document.createElement("div");
       titleDiv.className = "racer-title";
-      titleDiv.textContent = String(r.rawName);
+      titleDiv.appendChild(document.createTextNode(String(r.rawName)));
+
+      if (isOnline) {
+        const badge = document.createElement("span");
+        if (isTakenByOther) {
+          badge.className = "racer-status-badge badge-taken";
+          badge.textContent = "🔒 OCUPADO";
+        } else if (isMine) {
+          badge.className = "racer-status-badge badge-mine";
+          badge.textContent = "👤 TUYO";
+        } else {
+          badge.className = "racer-status-badge badge-free";
+          badge.textContent = "🟢 LIBRE";
+        }
+        titleDiv.appendChild(badge);
+      }
 
       const subDiv = document.createElement("div");
       subDiv.className = "racer-sub";
-      subDiv.textContent = "Kart #" + Number(r.number) + " • " + String(r.name);
+      subDiv.textContent = isTakenByOther
+        ? "No disponible (en uso)"
+        : "Kart #" + Number(r.number) + " • " + String(r.name);
 
       info.appendChild(titleDiv);
       info.appendChild(subDiv);
@@ -1028,23 +1127,45 @@
       btn.appendChild(info);
 
       btn.addEventListener("click", () => {
-        selectedRacerId = r.id;
-        buildRacerCardsUI();
-        currentGridOrder = window.RACERS_LIST.slice();
-        spawnGrid(currentGridOrder);
+        if (isOnline) {
+          if (net.isRacerClaimedByOther(r.id)) return;
+          net.requestClaimRacer(r.id);
+        } else {
+          selectedRacerId = r.id;
+          buildRacerCardsUI();
+          currentGridOrder = window.RACERS_LIST.slice();
+          spawnGrid(currentGridOrder);
+        }
       });
 
       gridEl.appendChild(btn);
     });
   }
 
-  function startStageSession(stageId) {
+  function startStageSession(stageId, isRemoteTrigger) {
+    if (net && net.getMode() === "CLIENT" && !isRemoteTrigger) {
+      const statusEl = document.getElementById("online-status-text");
+      if (statusEl) {
+        statusEl.textContent = "⏳ Esperando a que el Anfitrión de la sala inicie la etapa...";
+      }
+      return;
+    }
+
     if (audio) audio.init();
     currentStage = stageId || "RECON";
 
     // Si comenzamos Reconocimiento desde el menú, orden inicial 1 al 8 (con el jugador en su puesto original)
-    if (currentStage === "RECON") {
+    if (currentStage === "RECON" && !isRemoteTrigger) {
       currentGridOrder = window.RACERS_LIST.slice();
+    }
+
+    if (net && net.getMode() === "HOST") {
+      net.notifyHostStartStage(
+        currentStage,
+        currentDifficulty,
+        isRainMode,
+        currentGridOrder.map((r) => r.id)
+      );
     }
 
     const menuEl = document.getElementById("start-menu");
@@ -1290,6 +1411,9 @@
     document.querySelectorAll(".weather-pill").forEach((pill) => {
       pill.addEventListener("click", () => {
         toggleWeatherMode(pill.getAttribute("data-rain") === "true");
+        if (net && net.getMode() === "HOST") {
+          net.broadcastRosterSync();
+        }
       });
     });
 
@@ -1304,6 +1428,9 @@
           const hudDiffEl = document.getElementById("hud-diff-label");
           if (hudDiffEl) {
             hudDiffEl.textContent = DIFFICULTY_CONFIG[currentDifficulty].label;
+          }
+          if (net && net.getMode() === "HOST") {
+            net.broadcastRosterSync();
           }
         }
       });
@@ -1321,6 +1448,49 @@
         }
       });
     });
+
+    // Controles de Sala Multijugador Online (Crear Sala / Unirse con Código / Copiar / Salir)
+    const btnCreateRoom = document.getElementById("btn-create-room");
+    const btnJoinRoom = document.getElementById("btn-join-room");
+    const inputRoomCode = document.getElementById("input-room-code");
+    const btnCopyRoom = document.getElementById("btn-copy-room");
+    const btnLeaveRoom = document.getElementById("btn-leave-room");
+
+    if (btnCreateRoom) {
+      btnCreateRoom.addEventListener("click", () => {
+        if (net) net.createRoom(selectedRacerId);
+      });
+    }
+
+    if (btnJoinRoom && inputRoomCode) {
+      btnJoinRoom.addEventListener("click", () => {
+        if (net) net.joinRoom(inputRoomCode.value, selectedRacerId);
+      });
+      inputRoomCode.addEventListener("keydown", (ev) => {
+        ev.stopPropagation();
+        if (ev.key === "Enter" && net) {
+          net.joinRoom(inputRoomCode.value, selectedRacerId);
+        }
+      });
+    }
+
+    if (btnCopyRoom) {
+      btnCopyRoom.addEventListener("click", () => {
+        if (!net || !net.getRoomCode()) return;
+        const codeStr = "KART-" + net.getRoomCode();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(codeStr).catch(() => {});
+        }
+        btnCopyRoom.textContent = "✅ Copiado";
+        setTimeout(() => { btnCopyRoom.textContent = "📋 Copiar"; }, 1600);
+      });
+    }
+
+    if (btnLeaveRoom) {
+      btnLeaveRoom.addEventListener("click", () => {
+        if (net) net.leaveRoom();
+      });
+    }
   }
 
   window.initKartRacerGame = function () {
@@ -1364,6 +1534,124 @@
     weather = window.createWeatherSystem(scene, visorCanvas);
     audio = window.createKartAudio();
     setupSkyAndLights(isRainMode);
+
+    if (typeof window.createNetworkManager === "function") {
+      net = window.createNetworkManager({
+        getHostLobbySettings: () => ({
+          difficulty: currentDifficulty,
+          isRainMode,
+          gridOrderIds: currentGridOrder.map((r) => r.id)
+        }),
+        onStatusChange: (mode, roomCode, message, isError) => {
+          const pillEl = document.getElementById("online-mode-pill");
+          const defaultRow = document.getElementById("online-controls-default");
+          const activeRow = document.getElementById("online-controls-active");
+          const codeLabel = document.getElementById("online-room-code-label");
+          const statusText = document.getElementById("online-status-text");
+          const btnStart = document.getElementById("btn-start-race");
+
+          if (pillEl) {
+            const isOnline = mode !== "OFFLINE";
+            pillEl.classList.toggle("online-active", isOnline);
+            pillEl.textContent = isOnline
+              ? (mode === "HOST" ? "🟢 Anfitrión Online" : "🟢 Conectado Online")
+              : "Offline (1 Jug. + 7 Bots)";
+          }
+          if (defaultRow && activeRow) {
+            defaultRow.classList.toggle("hidden", mode !== "OFFLINE");
+            activeRow.classList.toggle("hidden", mode === "OFFLINE");
+          }
+          if (codeLabel && roomCode) {
+            codeLabel.textContent = "KART-" + roomCode;
+          }
+          if (statusText && message) {
+            statusText.textContent = message;
+            statusText.style.color = isError ? "#FCA5A5" : "#94A3B8";
+          }
+          if (btnStart) {
+            btnStart.textContent =
+              mode === "CLIENT"
+                ? "⏳ ESPERANDO AL ANFITRIÓN DE LA SALA..."
+                : "🏁 ¡SALIR A PISTA (RECONOCIMIENTO)!";
+          }
+          buildRacerCardsUI();
+        },
+        onRosterUpdated: (claimedMap, myPeerId, mode, roomCode, syncData) => {
+          const myAssignedRacer = net.getMyRacerId();
+          if (myAssignedRacer && myAssignedRacer !== selectedRacerId) {
+            selectedRacerId = myAssignedRacer;
+          }
+          if (mode === "CLIENT" && syncData) {
+            if (syncData.difficulty && DIFFICULTY_CONFIG[syncData.difficulty]) {
+              currentDifficulty = syncData.difficulty;
+            }
+            if (typeof syncData.isRainMode === "boolean" && syncData.isRainMode !== isRainMode) {
+              toggleWeatherMode(syncData.isRainMode);
+            }
+          }
+          const humanCount = Object.keys(claimedMap || {}).length;
+          const freeCount = 8 - humanCount;
+          const statusText = document.getElementById("online-status-text");
+          if (statusText && mode !== "OFFLINE") {
+            const myRacerObj = window.RACERS_LIST.find((r) => r.id === selectedRacerId);
+            statusText.style.color = "#86EFAC";
+            statusText.textContent =
+              `Sala KART-${roomCode} • ${humanCount}/8 humanos (${freeCount} libres) • Tu piloto exclusivo: #${selectedRacerId} ${myRacerObj ? myRacerObj.name : ""}`;
+          }
+          buildRacerCardsUI();
+          if (gameState === "MENU") {
+            spawnGrid(currentGridOrder);
+          }
+        },
+        onRemoteStartStage: (cfg) => {
+          if (cfg.difficulty && DIFFICULTY_CONFIG[cfg.difficulty]) {
+            currentDifficulty = cfg.difficulty;
+          }
+          if (typeof cfg.isRainMode === "boolean" && cfg.isRainMode !== isRainMode) {
+            toggleWeatherMode(cfg.isRainMode);
+          }
+          if (Array.isArray(cfg.gridOrderIds) && cfg.gridOrderIds.length === 8) {
+            const mapped = cfg.gridOrderIds
+              .map((id) => window.RACERS_LIST.find((r) => r.id === id))
+              .filter(Boolean);
+            if (mapped.length === 8) {
+              currentGridOrder = mapped;
+            }
+          }
+          startStageSession(cfg.stage || "RECON", true);
+        },
+        onClientKartState: (pkt) => {
+          const targetKart = karts.find((k) => k.racer.id === pkt.racerId);
+          if (targetKart && !targetKart.isPlayer) {
+            applyPacketToKartTarget(targetKart, pkt);
+          }
+        },
+        onWorldSnapshot: (kartPackets, hostRaceTime) => {
+          if (Math.abs(hostRaceTime - raceTime) > 0.35 && gameState === "RACING") {
+            raceTime = hostRaceTime;
+          }
+          kartPackets.forEach((pkt) => {
+            const targetKart = karts.find((k) => k.racer.id === pkt.racerId);
+            if (targetKart && !targetKart.isPlayer) {
+              applyPacketToKartTarget(targetKart, pkt);
+            }
+          });
+        },
+        onRemoteStageComplete: (data) => {
+          if (data && Array.isArray(data.gridOrderIds) && data.gridOrderIds.length === 8) {
+            const mapped = data.gridOrderIds
+              .map((id) => window.RACERS_LIST.find((r) => r.id === id))
+              .filter(Boolean);
+            if (mapped.length === 8) {
+              currentGridOrder = mapped;
+            }
+          }
+          if (gameState === "RACING") {
+            onStageComplete();
+          }
+        }
+      });
+    }
 
     buildRacerCardsUI();
     spawnGrid(currentGridOrder);
@@ -1452,6 +1740,9 @@
         karts.forEach((k) => updateKartPhysics(k, dt, gameState === "RACING"));
         if (gameState === "RACING") {
           resolveKartCollisions();
+          if (net) {
+            net.syncRaceTick(now, karts, playerKart, raceTime);
+          }
         }
       } else {
         if (playerKart) {

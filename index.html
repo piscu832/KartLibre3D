@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <!-- Cabeceras de Seguridad Anti-XSS, Anti-Clickjacking y Bloqueo de Scripts Externos / Inline -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.peerjs.com wss://*.peerjs.com; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none';" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <meta name="referrer" content="no-referrer" />
   <!-- Configuración PWA e Iconos de Instalación para Dispositivos Móviles y Escritorio -->
@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
   <title>KartLibre 3D • Kartódromo Ciudad de Buenos Aires</title>
-  <link rel="stylesheet" href="src/styles.css?v=8" />
+  <link rel="stylesheet" href="src/styles.css?v=9" />
 </head>
 <body>
   <!-- Escena 3D WebGL (Three.js) -->
@@ -42,8 +42,35 @@
         <strong>1 Vuelta de Reconocimiento</strong>, <strong>3 Vueltas de Clasificación</strong> (ordena la grilla) y <strong>30 Vueltas de Carrera Final</strong>.
       </p>
 
+      <!-- Modalidad Opcional Multijugador Online (Hasta 8 Usuarios sincronizados sin repetir corredor) -->
+      <div id="online-lobby-box" class="online-lobby-box">
+        <div class="online-lobby-header">
+          <span class="section-label" style="margin:0;">🌐 Multijugador Online (Opcional • Máx. 8)</span>
+          <span id="online-mode-pill" class="online-mode-pill">Offline (1 Jug. + 7 Bots)</span>
+        </div>
+        <div id="online-controls-default" class="online-controls-row">
+          <button id="btn-create-room" class="online-btn online-btn-create" title="Crear una sala online y obtener código para invitar hasta 7 amigos">
+            🌐 Crear Sala
+          </button>
+          <input id="input-room-code" type="text" class="online-code-input" maxlength="10" placeholder="Código (ej. 4829)" autocomplete="off" />
+          <button id="btn-join-room" class="online-btn online-btn-join" title="Unirse a la sala ingresando el código y elegir un corredor libre">
+            🔗 Unirse
+          </button>
+        </div>
+        <div id="online-controls-active" class="online-controls-row hidden">
+          <div class="online-room-chip">
+            Sala: <strong id="online-room-code-label">KART-----</strong>
+          </div>
+          <button id="btn-copy-room" class="online-btn" title="Copiar código de sala">📋 Copiar</button>
+          <button id="btn-leave-room" class="online-btn online-btn-leave" title="Salir de la sala online y volver a modo individual">❌ Salir</button>
+        </div>
+        <div id="online-status-text" class="online-status-text">
+          En modo Online cada corredor es único (ej. no pueden haber 2 Ayrton): sólo puedes elegir personajes libres.
+        </div>
+      </div>
+
       <div>
-        <div class="section-label">Selecciona tu Corredor (8 en Parrilla)</div>
+        <div class="section-label" id="racer-selector-title">Selecciona tu Corredor (8 en Parrilla • Sin Repetir)</div>
         <div id="racer-selector-grid"></div>
       </div>
 
@@ -249,12 +276,14 @@
   </div>
 
   <!-- Scripts del Juego (cargados exclusivamente desde origen local bajo CSP estricto) -->
-  <script src="src/three.min.js?v=8"></script>
-  <script src="src/kartModelData.js?v=8"></script>
-  <script src="src/racersData.js?v=8"></script>
-  <script src="src/kartFactory.js?v=8"></script>
-  <script src="src/trackBuilder.js?v=8"></script>
-  <script src="src/weatherAndAudio.js?v=8"></script>
-  <script src="src/gameEngine.js?v=8"></script>
+  <script src="src/three.min.js?v=9"></script>
+  <script src="src/peerjs.min.js?v=9"></script>
+  <script src="src/kartModelData.js?v=9"></script>
+  <script src="src/racersData.js?v=9"></script>
+  <script src="src/kartFactory.js?v=9"></script>
+  <script src="src/trackBuilder.js?v=9"></script>
+  <script src="src/weatherAndAudio.js?v=9"></script>
+  <script src="src/networkManager.js?v=9"></script>
+  <script src="src/gameEngine.js?v=9"></script>
 </body>
 </html>

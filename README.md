@@ -19,6 +19,9 @@ Juego de carreras de kartings en 3D ambientado en el **Kartódromo Ciudad de Bue
   - **Etapa 1**: 1 Vuelta de Reconocimiento.
   - **Etapa 2**: 3 Vueltas de Clasificación (ordena la parrilla de largada según el mejor tiempo de vuelta).
   - **Etapa 3**: 30 Vueltas de Carrera Final rueda a rueda contra los otros 7 corredores.
+- **🌐 Modalidad Multijugador Online Opcional (Hasta 8 Jugadores)**:
+  - **Crear Sala / Unirse con Código (`KART-XXXX`)** mediante WebRTC P2P (`PeerJS` + `BroadcastChannel` local).
+  - **Personajes Exclusivos sin Repetir**: No pueden existir 2 corredores iguales en la misma sala (por ejemplo, si un jugador elige a `#2 Ayrton`, queda marcado como `🔒 OCUPADO` y los demás participantes eligen entre los corredores `🟢 LIBRE` restantes). Los karts que queden sin jugador humano son conducidos y sincronizados por la IA.
 - **IA con Trazada Ideal y 3 Niveles de Dificultad**:
   - Configuración desde el menú inicial: **🟢 Fácil**, **🟡 Medio** y **🔴 Difícil**.
   - Los bots respetan los límites de la cinta asfáltica trazando las 10 curvas (Exterior → Ápice → Exterior) sin cortar por el pasto.
