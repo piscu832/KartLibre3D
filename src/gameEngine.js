@@ -133,90 +133,105 @@
   // ==================== CONTROL POR ACELERÓMETRO EN DISPOSITIVOS MÓVILES ====================
   let accelActive = false;
   let rawTiltDeg = 0;
+  let tiltZeroOffset = 0;
   let targetTiltSteer = 0;
   let smoothTiltSteer = 0;
+
+  function getScreenOrientationAngle() {
+    if (window.screen && window.screen.orientation && typeof window.screen.orientation.angle === "number") {
+      return window.screen.orientation.angle;
+    }
+    if (typeof window.orientation === "number") {
+      return window.orientation;
+    }
+    return 0;
+  }
+
+  // Convierte el vector de gravedad 3D a coordenadas del plano de pantalla del jugador.
+  // Es matemáticamente independiente del ángulo de reclinación hacia la cara del usuario.
+  function calculateScreenTilt(gx, gy, gz) {
+    const angle = getScreenOrientationAngle();
+    let sx = 0;
+    let sy = 0;
+
+    if (angle === 90) {
+      // Landscape primario (teléfono rotado 90° antihorario, parte superior a la izquierda):
+      // Eje horizontal de pantalla (derecha del piloto) apunta hacia -Y del dispositivo.
+      // Eje vertical de pantalla (arriba del piloto) apunta hacia +X del dispositivo.
+      sx = -gy;
+      sy = gx;
+    } else if (angle === 270 || angle === -90) {
+      // Landscape secundario (parte superior a la derecha)
+      sx = gy;
+      sy = -gx;
+    } else if (angle === 180) {
+      // Portrait invertido
+      sx = -gx;
+      sy = -gy;
+    } else {
+      // Portrait vertical estándar (0°)
+      sx = gx;
+      sy = gy;
+    }
+
+    const denom = -sy;
+    if (Math.abs(denom) < 0.25 && Math.abs(sx) < 0.25) {
+      return 0; // Dispositivo plano horizontal
+    }
+
+    // atan2(sx, denom):
+    // - Si sx > 0 (inclinación hacia la derecha): ángulo positivo (giro a la DERECHA)
+    // - Si sx < 0 (inclinación hacia la izquierda): ángulo negativo (giro a la IZQUIERDA)
+    const rad = Math.atan2(sx, Math.max(0.15, denom));
+    return rad * (180 / Math.PI);
+  }
+
+  function processTiltAngle(degrees) {
+    accelActive = true;
+    const adjusted = degrees - tiltZeroOffset;
+    rawTiltDeg = THREE.MathUtils.clamp(adjusted, -45, 45);
+
+    // Calibración ergonómica natural de competición:
+    // - Zona muerta pequeña (1.8°): absorbe temblores en rectas sin perder precisión
+    // - Rango máximo cómodo (21.0°): entrega el 100% de giro sin torcer muñecas
+    // - Curva casi lineal progresiva (exponente 1.10): excelente control en curvas rápidas y horquillas
+    const deadzone = 1.8;
+    const maxTilt = 21.0;
+    const absTilt = Math.abs(rawTiltDeg);
+
+    if (absTilt <= deadzone) {
+      targetTiltSteer = 0;
+    } else {
+      const norm = Math.min(1.0, (absTilt - deadzone) / (maxTilt - deadzone));
+      const progressive = Math.pow(norm, 1.10);
+      // rawTiltDeg < 0 es giro a la IZQUIERDA (-1 en steer), rawTiltDeg > 0 a la DERECHA (+1)
+      targetTiltSteer = (rawTiltDeg < 0 ? -1 : 1) * progressive;
+    }
+  }
 
   function handleDeviceOrientation(ev) {
     if (!ev) return;
     const beta = ev.beta;
     const gamma = ev.gamma;
     if (beta === null && gamma === null) return;
-    accelActive = true;
 
-    let angle = 0;
-    if (window.screen && window.screen.orientation && typeof window.screen.orientation.angle === "number") {
-      angle = window.screen.orientation.angle;
-    } else if (typeof window.orientation === "number") {
-      angle = window.orientation;
-    }
+    // Conversión robusta de ángulos Euler al vector de gravedad
+    const bRad = (beta || 0) * (Math.PI / 180);
+    const gRad = (gamma || 0) * (Math.PI / 180);
 
-    let tilt = 0;
-    if (angle === 90) {
-      // Landscape habitual en celulares (parte superior a la izquierda):
-      // Al girar a la izquierda (bajar lado izquierdo), beta es positivo
-      tilt = beta;
-    } else if (angle === 270 || angle === -90) {
-      // Landscape secundario (parte superior a la derecha)
-      tilt = -beta;
-    } else if (angle === 180) {
-      tilt = gamma;
-    } else {
-      // Portrait vertical (0°)
-      tilt = -gamma;
-    }
+    const gx = -9.8 * Math.sin(gRad) * Math.cos(bRad);
+    const gy = 9.8 * Math.sin(bRad);
+    const gz = 9.8 * Math.cos(gRad) * Math.cos(bRad);
 
-    rawTiltDeg = THREE.MathUtils.clamp(tilt, -45, 45);
-
-    const deadzone = 2.0; // 2° de zona muerta central para estabilidad de manos
-    const maxTilt = 24.0; // 24° de inclinación física máxima para viraje 100%
-    const absTilt = Math.abs(rawTiltDeg);
-
-    if (absTilt <= deadzone) {
-      targetTiltSteer = 0;
-    } else {
-      const norm = Math.min(1.0, (absTilt - deadzone) / (maxTilt - deadzone));
-      const progressive = Math.pow(norm, 1.12);
-      // tilt > 0 es inclinación a la izquierda (-1), tilt < 0 a la derecha (+1)
-      targetTiltSteer = (rawTiltDeg > 0 ? -1 : 1) * progressive;
-    }
+    const tilt = calculateScreenTilt(gx, gy, gz);
+    processTiltAngle(tilt);
   }
 
   function handleDeviceMotion(ev) {
-    if (accelActive) return; // Si DeviceOrientation ya está respondiendo, preferir orientation
     const g = ev.accelerationIncludingGravity;
     if (!g || g.x === null || g.y === null) return;
-
-    let angle = 0;
-    if (window.screen && window.screen.orientation && typeof window.screen.orientation.angle === "number") {
-      angle = window.screen.orientation.angle;
-    } else if (typeof window.orientation === "number") {
-      angle = window.orientation;
-    }
-
-    let latG = 0;
-    if (angle === 90) {
-      latG = g.y;
-    } else if (angle === 270 || angle === -90) {
-      latG = -g.y;
-    } else {
-      latG = -g.x;
-    }
-
-    const clamped = THREE.MathUtils.clamp(latG / 9.8, -1, 1);
-    rawTiltDeg = Math.asin(clamped) * (180 / Math.PI);
-
-    const deadzone = 2.0;
-    const maxTilt = 24.0;
-    const absTilt = Math.abs(rawTiltDeg);
-
-    if (absTilt <= deadzone) {
-      targetTiltSteer = 0;
-    } else {
-      const norm = Math.min(1.0, (absTilt - deadzone) / (maxTilt - deadzone));
-      const progressive = Math.pow(norm, 1.12);
-      targetTiltSteer = (rawTiltDeg > 0 ? -1 : 1) * progressive;
-    }
-    accelActive = true;
+    const tilt = calculateScreenTilt(g.x, g.y, g.z || 0);
+    processTiltAngle(tilt);
   }
 
   function requestSensorPermissions() {
@@ -1133,10 +1148,10 @@
     const elTiltBadge = document.getElementById("accel-tilt-badge");
     if (elTiltText && elTiltBadge) {
       const deg = Math.round(rawTiltDeg);
-      if (Math.abs(deg) <= 2) {
-        elTiltText.textContent = "● NIVELADO";
+      if (Math.abs(deg) <= 1) {
+        elTiltText.textContent = "● CENTRADO";
         elTiltBadge.classList.remove("tilting-left", "tilting-right");
-      } else if (deg > 2) {
+      } else if (deg < -1) {
         elTiltText.textContent = `◀ ${Math.abs(deg)}° IZQ`;
         elTiltBadge.classList.add("tilting-left");
         elTiltBadge.classList.remove("tilting-right");
@@ -1644,6 +1659,16 @@
       btnBackMenu.addEventListener("click", exitToMainMenu);
     }
 
+    const accelBadgeEl = document.getElementById("accel-tilt-badge");
+    if (accelBadgeEl) {
+      accelBadgeEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        tiltZeroOffset += rawTiltDeg;
+        const textEl = document.getElementById("accel-tilt-text");
+        if (textEl) textEl.textContent = "🎯 RE-CALIBRADO";
+      });
+    }
+
     const btnPause = document.getElementById("btn-pause-race");
     if (btnPause) {
       btnPause.addEventListener("click", togglePauseRace);
@@ -2037,7 +2062,7 @@
       // Sincronización del acelerómetro en dispositivos móviles (inclinar el celular para doblar)
       const hasKeyboardSteer = keys["KeyA"] || keys["KeyD"] || keys["ArrowLeft"] || keys["ArrowRight"];
       if ((isMobilePlatform() || accelActive) && !hasKeyboardSteer) {
-        smoothTiltSteer = THREE.MathUtils.lerp(smoothTiltSteer, targetTiltSteer, Math.min(1, dt * 14.0));
+        smoothTiltSteer = THREE.MathUtils.lerp(smoothTiltSteer, targetTiltSteer, Math.min(1, dt * 18.0));
         if (smoothTiltSteer < -0.01) {
           input.left = Math.abs(smoothTiltSteer);
           input.right = 0;
