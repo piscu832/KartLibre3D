@@ -130,6 +130,110 @@
     );
   };
 
+  // ==================== CONTROL POR ACELERÓMETRO EN DISPOSITIVOS MÓVILES ====================
+  let accelActive = false;
+  let rawTiltDeg = 0;
+  let targetTiltSteer = 0;
+  let smoothTiltSteer = 0;
+
+  function handleDeviceOrientation(ev) {
+    if (!ev) return;
+    const beta = ev.beta;
+    const gamma = ev.gamma;
+    if (beta === null && gamma === null) return;
+    accelActive = true;
+
+    let angle = 0;
+    if (window.screen && window.screen.orientation && typeof window.screen.orientation.angle === "number") {
+      angle = window.screen.orientation.angle;
+    } else if (typeof window.orientation === "number") {
+      angle = window.orientation;
+    }
+
+    let tilt = 0;
+    if (angle === 90) {
+      // Landscape habitual en celulares (parte superior a la izquierda):
+      // Al girar a la izquierda (bajar lado izquierdo), beta es positivo
+      tilt = beta;
+    } else if (angle === 270 || angle === -90) {
+      // Landscape secundario (parte superior a la derecha)
+      tilt = -beta;
+    } else if (angle === 180) {
+      tilt = gamma;
+    } else {
+      // Portrait vertical (0°)
+      tilt = -gamma;
+    }
+
+    rawTiltDeg = THREE.MathUtils.clamp(tilt, -45, 45);
+
+    const deadzone = 2.0; // 2° de zona muerta central para estabilidad de manos
+    const maxTilt = 24.0; // 24° de inclinación física máxima para viraje 100%
+    const absTilt = Math.abs(rawTiltDeg);
+
+    if (absTilt <= deadzone) {
+      targetTiltSteer = 0;
+    } else {
+      const norm = Math.min(1.0, (absTilt - deadzone) / (maxTilt - deadzone));
+      const progressive = Math.pow(norm, 1.12);
+      // tilt > 0 es inclinación a la izquierda (-1), tilt < 0 a la derecha (+1)
+      targetTiltSteer = (rawTiltDeg > 0 ? -1 : 1) * progressive;
+    }
+  }
+
+  function handleDeviceMotion(ev) {
+    if (accelActive) return; // Si DeviceOrientation ya está respondiendo, preferir orientation
+    const g = ev.accelerationIncludingGravity;
+    if (!g || g.x === null || g.y === null) return;
+
+    let angle = 0;
+    if (window.screen && window.screen.orientation && typeof window.screen.orientation.angle === "number") {
+      angle = window.screen.orientation.angle;
+    } else if (typeof window.orientation === "number") {
+      angle = window.orientation;
+    }
+
+    let latG = 0;
+    if (angle === 90) {
+      latG = g.y;
+    } else if (angle === 270 || angle === -90) {
+      latG = -g.y;
+    } else {
+      latG = -g.x;
+    }
+
+    const clamped = THREE.MathUtils.clamp(latG / 9.8, -1, 1);
+    rawTiltDeg = Math.asin(clamped) * (180 / Math.PI);
+
+    const deadzone = 2.0;
+    const maxTilt = 24.0;
+    const absTilt = Math.abs(rawTiltDeg);
+
+    if (absTilt <= deadzone) {
+      targetTiltSteer = 0;
+    } else {
+      const norm = Math.min(1.0, (absTilt - deadzone) / (maxTilt - deadzone));
+      const progressive = Math.pow(norm, 1.12);
+      targetTiltSteer = (rawTiltDeg > 0 ? -1 : 1) * progressive;
+    }
+    accelActive = true;
+  }
+
+  function requestSensorPermissions() {
+    if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+      DeviceOrientationEvent.requestPermission().then((res) => {
+        if (res === "granted") accelActive = true;
+      }).catch(() => {});
+    }
+    if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
+      DeviceMotionEvent.requestPermission().catch(() => {});
+    }
+  }
+
+  window.addEventListener("deviceorientation", handleDeviceOrientation, true);
+  window.addEventListener("devicemotion", handleMotionFallback, true);
+  function handleMotionFallback(ev) { handleDeviceMotion(ev); }
+
   function getActiveStageConfig() {
     return STAGE_CONFIG[currentStage] || STAGE_CONFIG.RECON;
   }
@@ -449,15 +553,12 @@
 
       const absSpd = Math.abs(k.speed);
       const speedRatio = THREE.MathUtils.clamp(absSpd / MAX_SPEED_MPS, 0, 1.15);
-      const isMobile = isMobilePlatform();
 
-      // 1. Respuesta ágil y directa de la dirección (en móvil más sensible a los giros y rápida al centrar)
-      const maxSteerLock = (isMobile ? 0.48 : 0.42) * (1.0 - speedRatio * (isMobile ? 0.10 : 0.18));
+      // 1. Respuesta ágil y directa de la dirección (idéntica y unificada para web y móvil)
+      const maxSteerLock = 0.42 * (1.0 - speedRatio * 0.18);
       const targetSteer = rawSteerInput * maxSteerLock;
       const isCentering = Math.abs(targetSteer) < Math.abs(k.steerAngle) && Math.sign(targetSteer || k.steerAngle) === Math.sign(k.steerAngle);
-      const steerResponseRate = isCentering
-        ? (isMobile ? 10.5 : 6.8)
-        : ((isMobile ? 8.2 : 5.2) * (1.0 - speedRatio * (isMobile ? 0.12 : 0.20)));
+      const steerResponseRate = isCentering ? 6.8 : (5.2 * (1.0 - speedRatio * 0.20));
       k.steerAngle = THREE.MathUtils.lerp(k.steerAngle, targetSteer, Math.min(1, dt * steerResponseRate));
 
       const trackInfo = track.findClosestTrackPoint(k.position, k.trackT);
@@ -497,12 +598,12 @@
       // 2. Dinámica de adherencia y resbalamiento (derrape centrífugo) al doblar demasiado rápido
       const speedFactor = THREE.MathUtils.clamp(absSpd / 3.2, 0, 1);
       const turnDir = k.speed >= -0.1 ? 1 : -1;
-      const baseTurnRate = (isMobile ? 3.45 : 2.55) * (1.0 - speedRatio * (isMobile ? 0.16 : 0.28));
+      const baseTurnRate = 2.55 * (1.0 - speedRatio * 0.28);
       const requestedOmega = k.steerAngle * baseTurnRate * speedFactor * turnDir;
 
       // Demanda de fuerza centrípeta lateral vs límite de adherencia de los neumáticos
       const lateralDemand = absSpd * Math.abs(requestedOmega);
-      const maxTireGrip = (isRainMode ? (isMobile ? 9.8 : 7.4) : (isMobile ? 14.5 : 10.6)) * (onGrass ? 0.52 : (onKerb ? 0.85 : 1.0));
+      const maxTireGrip = (isRainMode ? 7.4 : 10.6) * (onGrass ? 0.52 : (onKerb ? 0.85 : 1.0));
 
       let gripEfficiency = 1.0;
       let targetLateralSlide = -k.steerAngle * absSpd * (isRainMode ? 0.14 : 0.06);
@@ -1028,6 +1129,24 @@
       elWheelIcon.style.transform = `rotate(${deg.toFixed(1)}deg)`;
     }
 
+    const elTiltText = document.getElementById("accel-tilt-text");
+    const elTiltBadge = document.getElementById("accel-tilt-badge");
+    if (elTiltText && elTiltBadge) {
+      const deg = Math.round(rawTiltDeg);
+      if (Math.abs(deg) <= 2) {
+        elTiltText.textContent = "● NIVELADO";
+        elTiltBadge.classList.remove("tilting-left", "tilting-right");
+      } else if (deg > 2) {
+        elTiltText.textContent = `◀ ${Math.abs(deg)}° IZQ`;
+        elTiltBadge.classList.add("tilting-left");
+        elTiltBadge.classList.remove("tilting-right");
+      } else {
+        elTiltText.textContent = `DER ${Math.abs(deg)}° ▶`;
+        elTiltBadge.classList.add("tilting-right");
+        elTiltBadge.classList.remove("tilting-left");
+      }
+    }
+
     const elJoystickSphere = document.getElementById("steer-joystick-sphere");
     if (elJoystickSphere && !elJoystickSphere.classList.contains("active")) {
       const joyOffsetPx = (-playerKart.steerAngle / 0.33) * 62;
@@ -1173,6 +1292,7 @@
     }
 
     if (audio) audio.init();
+    requestSensorPermissions();
     currentStage = stageId || "RECON";
 
     // En dispositivos móviles táctiles, pasar automáticamente a pantalla completa al salir a pista
@@ -1184,10 +1304,10 @@
           Promise.resolve(req.call(docEl))
             .then(() => {
               if (screen.orientation && screen.orientation.lock) {
-                screen.orientation.lock("landscape").catch(() => {});
+                screen.orientation.lock("landscape").catch(() => { });
               }
             })
-            .catch(() => {});
+            .catch(() => { });
         }
       }
     }
@@ -1630,7 +1750,7 @@
         if (!net || !net.getRoomCode()) return;
         const codeStr = "KART-" + net.getRoomCode();
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(codeStr).catch(() => {});
+          navigator.clipboard.writeText(codeStr).catch(() => { });
         }
         btnCopyRoom.textContent = "✅ Copiado";
         setTimeout(() => { btnCopyRoom.textContent = "📋 Copiar"; }, 1600);
@@ -1653,15 +1773,15 @@
           Promise.resolve(req.call(docEl))
             .then(() => {
               if (screen.orientation && screen.orientation.lock) {
-                screen.orientation.lock("landscape").catch(() => {});
+                screen.orientation.lock("landscape").catch(() => { });
               }
             })
-            .catch(() => {});
+            .catch(() => { });
         }
       } else {
         const exit = document.exitFullscreen || document.webkitExitFullscreen;
         if (exit) {
-          Promise.resolve(exit.call(document)).catch(() => {});
+          Promise.resolve(exit.call(document)).catch(() => { });
         }
       }
     }
@@ -1702,7 +1822,7 @@
     });
 
     if ("serviceWorker" in navigator && (window.location.protocol === "https:" || window.location.hostname === "localhost")) {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
+      navigator.serviceWorker.register("./sw.js").catch(() => { });
     }
   }
 
@@ -1893,7 +2013,7 @@
         startStageSession(safeStage);
         countdownTimer = 0.05;
       }
-    } catch (e) {}
+    } catch (e) { }
 
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -1912,6 +2032,22 @@
         track.blimpGroup.position.x = Math.cos(bAngle) * 95;
         track.blimpGroup.position.z = Math.sin(bAngle) * 75 - 20;
         track.blimpGroup.rotation.y = -bAngle;
+      }
+
+      // Sincronización del acelerómetro en dispositivos móviles (inclinar el celular para doblar)
+      const hasKeyboardSteer = keys["KeyA"] || keys["KeyD"] || keys["ArrowLeft"] || keys["ArrowRight"];
+      if ((isMobilePlatform() || accelActive) && !hasKeyboardSteer) {
+        smoothTiltSteer = THREE.MathUtils.lerp(smoothTiltSteer, targetTiltSteer, Math.min(1, dt * 14.0));
+        if (smoothTiltSteer < -0.01) {
+          input.left = Math.abs(smoothTiltSteer);
+          input.right = 0;
+        } else if (smoothTiltSteer > 0.01) {
+          input.right = smoothTiltSteer;
+          input.left = 0;
+        } else {
+          input.left = 0;
+          input.right = 0;
+        }
       }
 
       if (gameState === "COUNTDOWN") {
