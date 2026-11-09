@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <!-- Cabeceras de Seguridad Anti-XSS, Anti-Clickjacking y Bloqueo de Scripts Externos / Inline -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.peerjs.com wss://*.peerjs.com; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.peerjs.com wss://*.peerjs.com; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none';" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <meta name="referrer" content="no-referrer" />
   <!-- Configuración PWA e Iconos de Instalación para Dispositivos Móviles y Escritorio -->
@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
   <title>KartLibre 3D • Kartódromo Ciudad de Buenos Aires</title>
-  <link rel="stylesheet" href="src/styles.css?v=9" />
+  <link rel="stylesheet" href="src/styles.css?v=10" />
 </head>
 <body>
   <!-- Escena 3D WebGL (Three.js) -->
@@ -32,9 +32,17 @@
     <div class="menu-panel menu-left">
       <div class="brand-header-row">
         <img src="assets/icon-192.png" alt="KartLibre 3D Icon" class="brand-app-icon" />
-        <div>
+        <div style="flex:1;min-width:0;">
           <span class="brand-badge">KartLibre 3D • Oficial</span>
           <h1 class="menu-title">Kart-Racer 3D</h1>
+        </div>
+        <div class="app-quick-actions">
+          <button id="btn-install-pwa" class="app-action-btn app-btn-install hidden" title="Instalar KartLibre 3D como App en tu dispositivo Android / PC">
+            📲 Instalar App
+          </button>
+          <button id="btn-fullscreen-menu" class="app-action-btn" title="Activar o salir de Pantalla Completa">
+            ⛶ Pantalla Completa
+          </button>
         </div>
       </div>
       <p class="menu-subtitle">
@@ -162,6 +170,7 @@
         <button id="btn-toggle-weather" class="hud-btn" title="Tecla V">
           🌧️ <span id="btn-weather-label">Clima: Lluvia (Mojado)</span>
         </button>
+        <button id="btn-fullscreen-hud" class="hud-btn" title="Pantalla Completa">⛶</button>
         <button id="btn-toggle-audio" class="hud-btn" title="Sonido Motor">🔊</button>
       </div>
 
@@ -171,16 +180,21 @@
       </div>
     </div>
 
-    <!-- Volante Virtual (Esquina Inferior Izquierda - Estilo Imagen 2) -->
+    <!-- Joystick con Esfera Táctil + Volante Virtual (Esquina Inferior Izquierda) -->
     <div class="hud-bottom-left hud-interactive">
       <div id="ui-steering-wheel" class="virtual-wheel-ring">
         <div class="virtual-wheel-spoke-h"></div>
         <div class="virtual-wheel-spoke-v"></div>
         <div class="virtual-wheel-hub">KART</div>
       </div>
-      <div class="steer-touch-row">
-        <button id="steer-left-btn" class="steer-touch-btn">◀</button>
-        <button id="steer-right-btn" class="steer-touch-btn">▶</button>
+      <div id="steer-joystick-base" class="joystick-base" title="Desliza la esfera a la izquierda o derecha para doblar">
+        <div class="joystick-track-line">
+          <span class="joystick-dir-hint">◄</span>
+          <span class="joystick-dir-hint">►</span>
+        </div>
+        <div id="steer-joystick-sphere" class="joystick-sphere">
+          <div class="joystick-sphere-shine"></div>
+        </div>
       </div>
     </div>
 
@@ -276,14 +290,14 @@
   </div>
 
   <!-- Scripts del Juego (cargados exclusivamente desde origen local bajo CSP estricto) -->
-  <script src="src/three.min.js?v=9"></script>
-  <script src="src/peerjs.min.js?v=9"></script>
-  <script src="src/kartModelData.js?v=9"></script>
-  <script src="src/racersData.js?v=9"></script>
-  <script src="src/kartFactory.js?v=9"></script>
-  <script src="src/trackBuilder.js?v=9"></script>
-  <script src="src/weatherAndAudio.js?v=9"></script>
-  <script src="src/networkManager.js?v=9"></script>
-  <script src="src/gameEngine.js?v=9"></script>
+  <script src="src/three.min.js?v=10"></script>
+  <script src="src/peerjs.min.js?v=10"></script>
+  <script src="src/kartModelData.js?v=10"></script>
+  <script src="src/racersData.js?v=10"></script>
+  <script src="src/kartFactory.js?v=10"></script>
+  <script src="src/trackBuilder.js?v=10"></script>
+  <script src="src/weatherAndAudio.js?v=10"></script>
+  <script src="src/networkManager.js?v=10"></script>
+  <script src="src/gameEngine.js?v=10"></script>
 </body>
 </html>

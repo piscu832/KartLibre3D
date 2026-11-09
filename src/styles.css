@@ -77,6 +77,38 @@ body, html {
   gap: 12px;
 }
 
+.app-quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.app-action-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(15, 23, 42, 0.85);
+  color: #E0F2FE;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.app-action-btn:hover {
+  background: rgba(2, 132, 199, 0.45);
+}
+
+.app-btn-install {
+  background: linear-gradient(135deg, #16A34A, #0D9488);
+  border-color: rgba(134, 239, 172, 0.65);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+}
+
 .brand-app-icon {
   width: 56px;
   height: 56px;
@@ -675,21 +707,78 @@ body, html {
   color: #E2E8F0;
 }
 
-.steer-touch-row {
+/* Joystick Analógico con Esfera Táctil para girar a izquierda / derecha */
+.joystick-base {
+  width: 146px;
+  height: 62px;
+  border-radius: 999px;
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.94) 0%, rgba(9, 13, 20, 0.98) 100%);
+  border: 2.5px solid rgba(148, 163, 184, 0.42);
+  box-shadow: inset 0 4px 14px rgba(0, 0, 0, 0.85), 0 8px 20px rgba(0, 0, 0, 0.55);
+  position: relative;
   display: flex;
-  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
 }
 
-.steer-touch-btn {
-  width: 58px;
-  height: 40px;
-  border-radius: 10px;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: #FFF;
-  font-size: 16px;
+.joystick-base:active {
+  cursor: grabbing;
+  border-color: rgba(56, 189, 248, 0.75);
+}
+
+.joystick-track-line {
+  width: 78%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(51, 65, 85, 0.75);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  pointer-events: none;
+}
+
+.joystick-dir-hint {
+  font-size: 11px;
   font-weight: 900;
-  cursor: pointer;
+  color: rgba(148, 163, 184, 0.55);
+  line-height: 1;
+}
+
+.joystick-sphere {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin-left: -24px;
+  margin-top: -24px;
+  background: radial-gradient(circle at 32% 28%, #60A5FA 0%, #0284C7 48%, #0F172A 95%);
+  border: 2.5px solid rgba(186, 230, 253, 0.85);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.75), 0 0 12px rgba(56, 189, 248, 0.45);
+  transition: transform 0.04s linear, box-shadow 0.12s ease;
+  pointer-events: none;
+}
+
+.joystick-sphere.active {
+  background: radial-gradient(circle at 32% 28%, #93C5FD 0%, #0EA5E9 48%, #1E3A8A 95%);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.85), 0 0 22px rgba(56, 189, 248, 0.9);
+  transition: none;
+}
+
+.joystick-sphere-shine {
+  position: absolute;
+  top: 7px;
+  left: 9px;
+  width: 14px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  transform: rotate(-25deg);
 }
 
 /* Tablero Inferior (Velocímetro + Tacómetro + Vuelta + Tiempo, posicionado a la izquierda de los pedales como en Imagen 2) */
@@ -1095,10 +1184,16 @@ body, html {
     font-size: 7px;
   }
 
-  .steer-touch-btn {
-    width: 52px;
-    height: 42px;
-    font-size: 16px;
+  .joystick-base {
+    width: 136px;
+    height: 58px;
+  }
+
+  .joystick-sphere {
+    width: 46px;
+    height: 46px;
+    margin-left: -23px;
+    margin-top: -23px;
   }
 
   .hud-bottom-right {
@@ -1261,10 +1356,16 @@ body, html {
     font-size: 7px;
   }
 
-  .steer-touch-btn {
-    width: 48px;
-    height: 36px;
-    font-size: 14px;
+  .joystick-base {
+    width: 128px;
+    height: 52px;
+  }
+
+  .joystick-sphere {
+    width: 42px;
+    height: 42px;
+    margin-left: -21px;
+    margin-top: -21px;
   }
 
   .hud-dashboard-center {

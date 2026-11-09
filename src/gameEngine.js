@@ -1013,6 +1013,12 @@
       elWheelIcon.style.transform = `rotate(${deg.toFixed(1)}deg)`;
     }
 
+    const elJoystickSphere = document.getElementById("steer-joystick-sphere");
+    if (elJoystickSphere && !elJoystickSphere.classList.contains("active")) {
+      const joyOffsetPx = (-playerKart.steerAngle / 0.40) * 38;
+      elJoystickSphere.style.transform = `translate(${joyOffsetPx.toFixed(1)}px, 0px)`;
+    }
+
     const lbContainer = document.getElementById("leaderboard-rows");
     if (lbContainer) {
       lbContainer.textContent = "";
@@ -1154,6 +1160,23 @@
     if (audio) audio.init();
     currentStage = stageId || "RECON";
 
+    // En dispositivos móviles táctiles, pasar automáticamente a pantalla completa al salir a pista
+    if (!isRemoteTrigger && ("ontouchstart" in window || navigator.maxTouchPoints > 0)) {
+      const docEl = document.documentElement;
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+        if (req) {
+          Promise.resolve(req.call(docEl))
+            .then(() => {
+              if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock("landscape").catch(() => {});
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    }
+
     // Si comenzamos Reconocimiento desde el menú, orden inicial 1 al 8 (con el jugador en su puesto original)
     if (currentStage === "RECON" && !isRemoteTrigger) {
       currentGridOrder = window.RACERS_LIST.slice();
@@ -1287,10 +1310,102 @@
     bindHoldButton("pedal-gas", () => { input.throttle = 1; }, () => { input.throttle = 0; });
     bindHoldButton("pedal-brake", () => { input.brake = 1; }, () => { input.brake = 0; });
     bindHoldButton("btn-boost", () => { input.boost = true; }, () => { input.boost = false; });
-    bindHoldButton("steer-left-btn", () => { input.left = 1; }, () => { input.left = 0; });
-    bindHoldButton("steer-right-btn", () => { input.right = 1; }, () => { input.right = 0; });
 
-    // Soporte táctil analógico sobre el volante virtual en dispositivos móviles
+    // ==================== JOYSTICK CON ESFERA TÁCTIL PARA GIRAR A IZQUIERDA O DERECHA ====================
+    const joyBase = document.getElementById("steer-joystick-base");
+    const joySphere = document.getElementById("steer-joystick-sphere");
+    if (joyBase && joySphere) {
+      let joyTouchId = null;
+      let joyMouseDown = false;
+
+      const updateJoystickPosition = (clientX, clientY) => {
+        const rect = joyBase.getBoundingClientRect();
+        const centerX = rect.left + rect.width * 0.5;
+        const centerY = rect.top + rect.height * 0.5;
+        const maxRadiusX = Math.max(24, (rect.width - joySphere.offsetWidth) * 0.5 - 4);
+        const maxRadiusY = 7;
+
+        const dx = THREE.MathUtils.clamp(clientX - centerX, -maxRadiusX, maxRadiusX);
+        const dy = THREE.MathUtils.clamp(clientY - centerY, -maxRadiusY, maxRadiusY);
+        joySphere.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+
+        const normX = THREE.MathUtils.clamp(dx / maxRadiusX, -1, 1);
+        if (normX < -0.05) {
+          input.left = THREE.MathUtils.clamp(Math.abs(normX) * 1.08, 0, 1);
+          input.right = 0;
+        } else if (normX > 0.05) {
+          input.right = THREE.MathUtils.clamp(Math.abs(normX) * 1.08, 0, 1);
+          input.left = 0;
+        } else {
+          input.left = 0;
+          input.right = 0;
+        }
+      };
+
+      const resetJoystick = () => {
+        joyTouchId = null;
+        joyMouseDown = false;
+        joySphere.classList.remove("active");
+        joySphere.style.transform = "translate(0px, 0px)";
+        input.left = 0;
+        input.right = 0;
+      };
+
+      joyBase.addEventListener("touchstart", (ev) => {
+        ev.preventDefault();
+        if (ev.changedTouches.length > 0) {
+          const t = ev.changedTouches[0];
+          joyTouchId = t.identifier;
+          joySphere.classList.add("active");
+          updateJoystickPosition(t.clientX, t.clientY);
+        }
+      }, { passive: false });
+
+      joyBase.addEventListener("touchmove", (ev) => {
+        ev.preventDefault();
+        for (let i = 0; i < ev.touches.length; i++) {
+          if (ev.touches[i].identifier === joyTouchId) {
+            updateJoystickPosition(ev.touches[i].clientX, ev.touches[i].clientY);
+            break;
+          }
+        }
+      }, { passive: false });
+
+      joyBase.addEventListener("touchend", (ev) => {
+        ev.preventDefault();
+        for (let i = 0; i < ev.changedTouches.length; i++) {
+          if (ev.changedTouches[i].identifier === joyTouchId) {
+            resetJoystick();
+            break;
+          }
+        }
+      }, { passive: false });
+
+      joyBase.addEventListener("touchcancel", (ev) => {
+        ev.preventDefault();
+        resetJoystick();
+      }, { passive: false });
+
+      joyBase.addEventListener("mousedown", (ev) => {
+        ev.preventDefault();
+        joyMouseDown = true;
+        joySphere.classList.add("active");
+        updateJoystickPosition(ev.clientX, ev.clientY);
+      });
+
+      window.addEventListener("mousemove", (ev) => {
+        if (!joyMouseDown) return;
+        updateJoystickPosition(ev.clientX, ev.clientY);
+      });
+
+      window.addEventListener("mouseup", () => {
+        if (joyMouseDown) {
+          resetJoystick();
+        }
+      });
+    }
+
+    // Soporte táctil adicional sobre el aro del volante virtual
     const wheelEl = document.getElementById("ui-steering-wheel");
     if (wheelEl) {
       let wheelTouchId = null;
@@ -1490,6 +1605,68 @@
       btnLeaveRoom.addEventListener("click", () => {
         if (net) net.leaveRoom();
       });
+    }
+
+    // ==================== PANTALLA COMPLETA E INSTALACIÓN PWA EN ANDROID ====================
+    function toggleFullscreenMode() {
+      const docEl = document.documentElement;
+      const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+      if (!isFull) {
+        const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+        if (req) {
+          Promise.resolve(req.call(docEl))
+            .then(() => {
+              if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock("landscape").catch(() => {});
+              }
+            })
+            .catch(() => {});
+        }
+      } else {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exit) {
+          Promise.resolve(exit.call(document)).catch(() => {});
+        }
+      }
+    }
+
+    const btnFullMenu = document.getElementById("btn-fullscreen-menu");
+    const btnFullHud = document.getElementById("btn-fullscreen-hud");
+    if (btnFullMenu) btnFullMenu.addEventListener("click", toggleFullscreenMode);
+    if (btnFullHud) btnFullHud.addEventListener("click", toggleFullscreenMode);
+
+    let deferredInstallPrompt = null;
+    const btnInstallPwa = document.getElementById("btn-install-pwa");
+
+    window.addEventListener("beforeinstallprompt", (ev) => {
+      ev.preventDefault();
+      deferredInstallPrompt = ev;
+      if (btnInstallPwa) {
+        btnInstallPwa.classList.remove("hidden");
+      }
+    });
+
+    if (btnInstallPwa) {
+      btnInstallPwa.addEventListener("click", () => {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          deferredInstallPrompt.userChoice.finally(() => {
+            deferredInstallPrompt = null;
+            btnInstallPwa.classList.add("hidden");
+          });
+        } else {
+          toggleFullscreenMode();
+        }
+      });
+    }
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+      if (btnInstallPwa) btnInstallPwa.classList.add("hidden");
+    });
+
+    if ("serviceWorker" in navigator && (window.location.protocol === "https:" || window.location.hostname === "localhost")) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
     }
   }
 
