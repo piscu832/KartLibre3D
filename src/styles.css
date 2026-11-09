@@ -653,68 +653,68 @@ body, html {
   margin-bottom: 4px;
 }
 
-/* Volante Virtual en Esquina Inferior Izquierda (Estilo Imagen 2) */
+/* Área Amplia y Transparente de Joystick con Esfera Táctil en Esquina Inferior Izquierda */
 .hud-bottom-left {
   position: absolute;
-  bottom: 20px;
-  left: 22px;
+  bottom: 18px;
+  left: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
 }
 
 .virtual-wheel-ring {
-  width: 132px;
-  height: 132px;
+  width: 112px;
+  height: 112px;
   border-radius: 50%;
-  border: 14px solid #1E222A;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 6px 20px rgba(0,0,0,0.6);
-  position: relative;
+  border: 6px solid rgba(255, 255, 255, 0.16);
+  position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform 0.05s linear;
+  opacity: 0.22;
+  pointer-events: none;
 }
 
 .virtual-wheel-spoke-h {
   position: absolute;
   width: 100%;
-  height: 14px;
-  background: #2C323D;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .virtual-wheel-spoke-v {
   position: absolute;
-  width: 14px;
-  height: 55%;
+  width: 5px;
+  height: 50%;
   bottom: 0;
-  background: #2C323D;
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .virtual-wheel-hub {
-  width: 38px;
-  height: 38px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: #11141A;
-  border: 3px solid #94A3B8;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.22);
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
-  font-weight: 900;
-  color: #E2E8F0;
+  font-size: 7px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.35);
 }
 
-/* Joystick Analógico con Esfera Táctil para girar a izquierda / derecha */
+/* Joystick Analógico Grande y Transparente para no tapar la visual de la pista */
 .joystick-base {
-  width: 146px;
-  height: 62px;
-  border-radius: 999px;
-  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.94) 0%, rgba(9, 13, 20, 0.98) 100%);
-  border: 2.5px solid rgba(148, 163, 184, 0.42);
-  box-shadow: inset 0 4px 14px rgba(0, 0, 0, 0.85), 0 8px 20px rgba(0, 0, 0, 0.55);
+  width: 235px;
+  height: 145px;
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1.5px solid rgba(255, 255, 255, 0.20);
+  box-shadow: none;
   position: relative;
   display: flex;
   align-items: center;
@@ -725,59 +725,60 @@ body, html {
 
 .joystick-base:active {
   cursor: grabbing;
-  border-color: rgba(56, 189, 248, 0.75);
+  border-color: rgba(125, 211, 252, 0.45);
+  background: rgba(56, 189, 248, 0.05);
 }
 
 .joystick-track-line {
-  width: 78%;
-  height: 6px;
+  width: 84%;
+  height: 3px;
   border-radius: 999px;
-  background: rgba(51, 65, 85, 0.75);
-  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8);
+  background: rgba(255, 255, 255, 0.14);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 6px;
+  padding: 0 8px;
   pointer-events: none;
 }
 
 .joystick-dir-hint {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
-  color: rgba(148, 163, 184, 0.55);
+  color: rgba(255, 255, 255, 0.32);
   line-height: 1;
 }
 
 .joystick-sphere {
-  width: 48px;
-  height: 48px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   position: absolute;
   left: 50%;
   top: 50%;
-  margin-left: -24px;
-  margin-top: -24px;
-  background: radial-gradient(circle at 32% 28%, #60A5FA 0%, #0284C7 48%, #0F172A 95%);
-  border: 2.5px solid rgba(186, 230, 253, 0.85);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.75), 0 0 12px rgba(56, 189, 248, 0.45);
-  transition: transform 0.04s linear, box-shadow 0.12s ease;
+  margin-left: -29px;
+  margin-top: -29px;
+  background: radial-gradient(circle at 32% 28%, rgba(125, 211, 252, 0.46) 0%, rgba(2, 132, 199, 0.28) 58%, rgba(15, 23, 42, 0.32) 100%);
+  border: 2px solid rgba(186, 230, 253, 0.58);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+  transition: transform 0.04s linear;
   pointer-events: none;
 }
 
 .joystick-sphere.active {
-  background: radial-gradient(circle at 32% 28%, #93C5FD 0%, #0EA5E9 48%, #1E3A8A 95%);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.85), 0 0 22px rgba(56, 189, 248, 0.9);
+  background: radial-gradient(circle at 32% 28%, rgba(147, 197, 253, 0.62) 0%, rgba(14, 165, 233, 0.42) 55%, rgba(30, 58, 138, 0.45) 100%);
+  border-color: rgba(186, 230, 253, 0.85);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.48);
   transition: none;
 }
 
 .joystick-sphere-shine {
   position: absolute;
-  top: 7px;
-  left: 9px;
-  width: 14px;
-  height: 9px;
+  top: 9px;
+  left: 11px;
+  width: 16px;
+  height: 10px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.38);
   transform: rotate(-25deg);
 }
 
@@ -1173,27 +1174,28 @@ body, html {
   }
 
   .virtual-wheel-ring {
-    width: 78px;
-    height: 78px;
-    border-width: 9px;
+    width: 96px;
+    height: 96px;
+    border-width: 5px;
   }
 
   .virtual-wheel-hub {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     font-size: 7px;
   }
 
   .joystick-base {
-    width: 136px;
-    height: 58px;
+    width: 205px;
+    height: 132px;
+    border-radius: 28px;
   }
 
   .joystick-sphere {
-    width: 46px;
-    height: 46px;
-    margin-left: -23px;
-    margin-top: -23px;
+    width: 54px;
+    height: 54px;
+    margin-left: -27px;
+    margin-top: -27px;
   }
 
   .hud-bottom-right {
@@ -1345,27 +1347,28 @@ body, html {
   }
 
   .virtual-wheel-ring {
-    width: 72px;
-    height: 72px;
-    border-width: 8px;
+    width: 88px;
+    height: 88px;
+    border-width: 5px;
   }
 
   .virtual-wheel-hub {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     font-size: 7px;
   }
 
   .joystick-base {
-    width: 128px;
-    height: 52px;
+    width: 195px;
+    height: 122px;
+    border-radius: 26px;
   }
 
   .joystick-sphere {
-    width: 42px;
-    height: 42px;
-    margin-left: -21px;
-    margin-top: -21px;
+    width: 52px;
+    height: 52px;
+    margin-left: -26px;
+    margin-top: -26px;
   }
 
   .hud-dashboard-center {

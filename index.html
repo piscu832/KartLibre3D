@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
   <title>KartLibre 3D • Kartódromo Ciudad de Buenos Aires</title>
-  <link rel="stylesheet" href="src/styles.css?v=11" />
+  <link rel="stylesheet" href="src/styles.css?v=12" />
 </head>
 <body>
   <!-- Escena 3D WebGL (Three.js) -->
@@ -180,14 +180,14 @@
       </div>
     </div>
 
-    <!-- Joystick con Esfera Táctil + Volante Virtual (Esquina Inferior Izquierda) -->
+    <!-- Área Amplia y Transparente de Joystick con Esfera Táctil (Esquina Inferior Izquierda) -->
     <div class="hud-bottom-left hud-interactive">
-      <div id="ui-steering-wheel" class="virtual-wheel-ring">
-        <div class="virtual-wheel-spoke-h"></div>
-        <div class="virtual-wheel-spoke-v"></div>
-        <div class="virtual-wheel-hub">KART</div>
-      </div>
-      <div id="steer-joystick-base" class="joystick-base" title="Desliza la esfera a la izquierda o derecha para doblar">
+      <div id="steer-joystick-base" class="joystick-base" title="Desliza suavemente la esfera a la izquierda o derecha para doblar">
+        <div id="ui-steering-wheel" class="virtual-wheel-ring">
+          <div class="virtual-wheel-spoke-h"></div>
+          <div class="virtual-wheel-spoke-v"></div>
+          <div class="virtual-wheel-hub">KART</div>
+        </div>
         <div class="joystick-track-line">
           <span class="joystick-dir-hint">◄</span>
           <span class="joystick-dir-hint">►</span>
@@ -290,14 +290,14 @@
   </div>
 
   <!-- Scripts del Juego (cargados exclusivamente desde origen local bajo CSP estricto) -->
-  <script src="src/three.min.js?v=11"></script>
-  <script src="src/peerjs.min.js?v=11"></script>
-  <script src="src/kartModelData.js?v=11"></script>
-  <script src="src/racersData.js?v=11"></script>
-  <script src="src/kartFactory.js?v=11"></script>
-  <script src="src/trackBuilder.js?v=11"></script>
-  <script src="src/weatherAndAudio.js?v=11"></script>
-  <script src="src/networkManager.js?v=11"></script>
-  <script src="src/gameEngine.js?v=11"></script>
+  <script src="src/three.min.js?v=12"></script>
+  <script src="src/peerjs.min.js?v=12"></script>
+  <script src="src/kartModelData.js?v=12"></script>
+  <script src="src/racersData.js?v=12"></script>
+  <script src="src/kartFactory.js?v=12"></script>
+  <script src="src/trackBuilder.js?v=12"></script>
+  <script src="src/weatherAndAudio.js?v=12"></script>
+  <script src="src/networkManager.js?v=12"></script>
+  <script src="src/gameEngine.js?v=12"></script>
 </body>
 </html>

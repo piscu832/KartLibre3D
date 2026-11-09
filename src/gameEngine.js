@@ -442,10 +442,10 @@
       const speedRatio = THREE.MathUtils.clamp(absSpd / MAX_SPEED_MPS, 0, 1.15);
 
       // 1. Reacción al girar más lenta, progresiva y realista (sensible a la velocidad)
-      const maxSteerLock = 0.40 * (1.0 - speedRatio * 0.22);
+      const maxSteerLock = 0.33 * (1.0 - speedRatio * 0.24);
       const targetSteer = rawSteerInput * maxSteerLock;
       const isCentering = Math.abs(targetSteer) < Math.abs(k.steerAngle) && Math.sign(targetSteer || k.steerAngle) === Math.sign(k.steerAngle);
-      const steerResponseRate = isCentering ? 3.6 : (2.35 * (1.0 - speedRatio * 0.28));
+      const steerResponseRate = isCentering ? 2.4 : (1.55 * (1.0 - speedRatio * 0.32));
       k.steerAngle = THREE.MathUtils.lerp(k.steerAngle, targetSteer, Math.min(1, dt * steerResponseRate));
 
       const trackInfo = track.findClosestTrackPoint(k.position, k.trackT);
@@ -485,7 +485,7 @@
       // 2. Dinámica de adherencia y resbalamiento (derrape centrífugo) al doblar demasiado rápido
       const speedFactor = THREE.MathUtils.clamp(absSpd / 3.5, 0, 1);
       const turnDir = k.speed >= -0.1 ? 1 : -1;
-      const baseTurnRate = 2.45 * (1.0 - speedRatio * 0.34);
+      const baseTurnRate = 1.92 * (1.0 - speedRatio * 0.35);
       const requestedOmega = k.steerAngle * baseTurnRate * speedFactor * turnDir;
 
       // Demanda de fuerza centrípeta lateral vs límite de adherencia de los neumáticos
@@ -1018,7 +1018,7 @@
 
     const elJoystickSphere = document.getElementById("steer-joystick-sphere");
     if (elJoystickSphere && !elJoystickSphere.classList.contains("active")) {
-      const joyOffsetPx = (-playerKart.steerAngle / 0.40) * 38;
+      const joyOffsetPx = (-playerKart.steerAngle / 0.33) * 62;
       elJoystickSphere.style.transform = `translate(${joyOffsetPx.toFixed(1)}px, 0px)`;
     }
 
@@ -1325,23 +1325,30 @@
         const rect = joyBase.getBoundingClientRect();
         const centerX = rect.left + rect.width * 0.5;
         const centerY = rect.top + rect.height * 0.5;
-        const maxRadiusX = Math.max(24, (rect.width - joySphere.offsetWidth) * 0.5 - 4);
-        const maxRadiusY = 7;
+        const maxRadiusX = Math.max(45, (rect.width - joySphere.offsetWidth) * 0.5 - 6);
+        const maxRadiusY = Math.max(20, (rect.height - joySphere.offsetHeight) * 0.5 - 6);
 
         const dx = THREE.MathUtils.clamp(clientX - centerX, -maxRadiusX, maxRadiusX);
         const dy = THREE.MathUtils.clamp(clientY - centerY, -maxRadiusY, maxRadiusY);
         joySphere.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
 
+        // Curva exponencial progresiva y suave para sensibilidad realista
         const normX = THREE.MathUtils.clamp(dx / maxRadiusX, -1, 1);
-        if (normX < -0.05) {
-          input.left = THREE.MathUtils.clamp(Math.abs(normX) * 1.08, 0, 1);
-          input.right = 0;
-        } else if (normX > 0.05) {
-          input.right = THREE.MathUtils.clamp(Math.abs(normX) * 1.08, 0, 1);
+        const deadzone = 0.06;
+        const absNorm = Math.abs(normX);
+        if (absNorm <= deadzone) {
           input.left = 0;
+          input.right = 0;
         } else {
-          input.left = 0;
-          input.right = 0;
+          const rescaled = (absNorm - deadzone) / (1.0 - deadzone);
+          const progressiveSteer = Math.pow(rescaled, 1.85) * 0.72;
+          if (normX < 0) {
+            input.left = progressiveSteer;
+            input.right = 0;
+          } else {
+            input.right = progressiveSteer;
+            input.left = 0;
+          }
         }
       };
 
