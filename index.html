@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
   <title>KartLibre 3D • Kartódromo Ciudad de Buenos Aires</title>
-  <link rel="stylesheet" href="src/styles.css?v=16" />
+  <link rel="stylesheet" href="src/styles.css?v=17" />
 </head>
 <body>
   <!-- Escena 3D WebGL (Three.js) -->
@@ -37,6 +37,9 @@
           <h1 class="menu-title">Kart-Racer 3D</h1>
         </div>
         <div class="app-quick-actions">
+          <button id="btn-settings-menu" class="app-action-btn" title="Configurar controles, sensibilidad, audio, vueltas y dificultad">
+            ⚙️ Configuración
+          </button>
           <button id="btn-install-pwa" class="app-action-btn app-btn-install hidden" title="Instalar KartLibre 3D como App en tu dispositivo Android / PC">
             📲 Instalar App
           </button>
@@ -47,7 +50,7 @@
       </div>
       <p class="menu-subtitle">
         Elige tu piloto de la lista oficial. Formato de Gran Premio completo contra los otros 7 corredores:
-        <strong>1 Vuelta de Reconocimiento</strong>, <strong>3 Vueltas de Clasificación</strong> (ordena la grilla) y <strong>30 Vueltas de Carrera Final</strong>.
+        <strong>1 Vuelta de Reconocimiento</strong>, <strong>3 Vueltas de Clasificación</strong> (ordena la grilla) y <strong id="menu-laps-span">30 Vueltas de Carrera Final</strong>.
       </p>
 
       <!-- Modalidad Opcional Multijugador Online (Hasta 8 Usuarios sincronizados sin repetir corredor) -->
@@ -103,7 +106,7 @@
         <div class="format-steps">
           <span class="format-pill">1° Reconocimiento (1V)</span>
           <span class="format-pill">2° Clasificación (3V)</span>
-          <span class="format-pill">3° Carrera (30V)</span>
+          <span class="format-pill" id="format-pill-race">3° Carrera (30V)</span>
         </div>
       </div>
 
@@ -172,6 +175,7 @@
           🌧️ <span id="btn-weather-label">Clima: Lluvia (Mojado)</span>
         </button>
         <button id="btn-fullscreen-hud" class="hud-btn" title="Pantalla Completa">⛶</button>
+        <button id="btn-settings-hud" class="hud-btn" title="Ajustes y Configuración">⚙️</button>
         <button id="btn-toggle-audio" class="hud-btn" title="Sonido Motor">🔊</button>
       </div>
 
@@ -259,6 +263,116 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL DE CONFIGURACIÓN Y AJUSTES ==================== -->
+  <div id="settings-modal" class="hidden">
+    <div class="settings-card">
+      <div class="settings-header">
+        <span class="brand-badge">KartLibre 3D • Preferencias</span>
+        <h2 class="menu-title" style="margin-top:8px;">⚙️ CONFIGURACIÓN Y AJUSTES</h2>
+        <p class="menu-subtitle" style="margin-top:4px;">Tus preferencias se guardan automáticamente y se mantienen al recargar.</p>
+      </div>
+
+      <div class="settings-body">
+        <!-- 1. Sensibilidad del Giro -->
+        <div class="settings-group">
+          <div class="settings-group-header">
+            <span class="settings-label">🎯 Sensibilidad de Dirección</span>
+            <span id="setting-steer-sens-val" class="settings-badge-val">100%</span>
+          </div>
+          <div class="settings-slider-row">
+            <span class="slider-limit">50%</span>
+            <input id="setting-steer-sens" type="range" min="50" max="200" step="5" value="100" class="settings-slider" />
+            <span class="slider-limit">200%</span>
+          </div>
+          <div class="settings-hint">Ajusta la velocidad y ángulo de respuesta del volante y giros.</div>
+        </div>
+
+        <!-- 2. Método de Dirección en Móvil / Táctil: Acelerómetro vs Joystick -->
+        <div class="settings-group">
+          <div class="settings-group-header">
+            <span class="settings-label">📱 Modo de Giro en Móvil / Táctil</span>
+          </div>
+          <div class="pill-group">
+            <button id="btn-control-accel" class="option-pill active" data-control="ACCELEROMETER">📲 Acelerómetro (Girar Celular)</button>
+            <button id="btn-control-joystick" class="option-pill" data-control="JOYSTICK">🕹️ Joystick Táctil en Pantalla</button>
+          </div>
+          <div class="settings-hint">Elige entre girar inclinando físicamente el dispositivo o deslizar la esfera táctil.</div>
+        </div>
+
+        <!-- 3. Invertir Giro en Acelerómetro (Derecha es Izquierda) -->
+        <div id="setting-group-invert-accel" class="settings-group">
+          <div class="settings-group-header">
+            <span class="settings-label">🔄 Invertir Giro en Acelerómetro</span>
+          </div>
+          <div class="pill-group">
+            <button id="btn-invert-accel-on" class="option-pill active" data-invert="true">🔁 Invertido (Derecha es Izquierda)</button>
+            <button id="btn-invert-accel-off" class="option-pill" data-invert="false">➡️ Normal (Directo)</button>
+          </div>
+          <div class="settings-hint">Al estar invertido: inclinar a la derecha dobla a la izquierda y viceversa.</div>
+        </div>
+
+        <!-- 4. Audio Encendido o Apagado -->
+        <div class="settings-group">
+          <div class="settings-group-header">
+            <span class="settings-label">🔊 Sonido del Juego</span>
+          </div>
+          <div class="pill-group">
+            <button id="btn-audio-on" class="option-pill active" data-audio="true">🔊 Audio Encendido</button>
+            <button id="btn-audio-off" class="option-pill" data-audio="false">🔇 Silenciado (Apagado)</button>
+          </div>
+        </div>
+
+        <!-- 5. Nivel de Dificultad -->
+        <div class="settings-group">
+          <div class="settings-group-header">
+            <span class="settings-label">🤖 Nivel de Dificultad IA</span>
+          </div>
+          <div class="pill-group-3">
+            <button class="option-pill setting-diff-pill" data-diff="EASY">🟢 Fácil</button>
+            <button class="option-pill setting-diff-pill active" data-diff="MEDIUM">🟡 Medio</button>
+            <button class="option-pill setting-diff-pill" data-diff="HARD">🔴 Difícil</button>
+          </div>
+        </div>
+
+        <!-- 6. Condición Climática -->
+        <div class="settings-group">
+          <div class="settings-group-header">
+            <span class="settings-label">🌧️ Condición Climática</span>
+          </div>
+          <div class="pill-group">
+            <button class="option-pill setting-weather-pill active" data-rain="true">🌧️ Lluvia / Pista Mojada</button>
+            <button class="option-pill setting-weather-pill" data-rain="false">☀️ Soleado / Pista Seca</button>
+          </div>
+        </div>
+
+        <!-- 7. Cantidad de Vueltas de la Carrera Final -->
+        <div class="settings-group">
+          <div class="settings-group-header">
+            <span class="settings-label">🏁 Vueltas de la Carrera Final</span>
+            <span id="setting-laps-display" class="settings-badge-val">30 Vueltas</span>
+          </div>
+          <div class="settings-stepper-row">
+            <button id="btn-laps-minus" class="stepper-btn" title="Restar 1 vuelta">-</button>
+            <input id="setting-race-laps" type="number" min="1" max="100" value="30" class="stepper-input" />
+            <button id="btn-laps-plus" class="stepper-btn" title="Sumar 1 vuelta">+</button>
+            <div class="pill-group laps-preset-pills">
+              <button class="option-pill laps-pill" data-laps="3">3V</button>
+              <button class="option-pill laps-pill" data-laps="5">5V</button>
+              <button class="option-pill laps-pill" data-laps="10">10V</button>
+              <button class="option-pill laps-pill" data-laps="15">15V</button>
+              <button class="option-pill laps-pill active" data-laps="30">30V</button>
+            </div>
+          </div>
+          <div class="settings-hint">Cambia las 30 vueltas a cualquier valor deseado entre 1 y 100 vueltas.</div>
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <button id="btn-close-settings" class="btn-primary-race">💾 GUARDAR Y CERRAR</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MODAL DE PAUSA EN CARRERA ==================== -->
   <div id="pause-modal" class="hidden">
     <div class="finish-card" style="width:420px;">
@@ -269,6 +383,7 @@
       </p>
       <div style="display:flex;flex-direction:column;gap:12px;">
         <button id="btn-resume-race" class="btn-primary-race">▶️ REANUDAR CARRERA</button>
+        <button id="btn-settings-pause" class="hud-btn" style="padding:13px 16px;font-size:14px;">⚙️ Ajustes y Configuración</button>
         <button id="btn-pause-restart" class="hud-btn" style="padding:13px 16px;font-size:14px;">🔄 Reiniciar Etapa Actual</button>
         <button id="btn-pause-main-menu" class="hud-btn" style="padding:13px 16px;font-size:14px;border-color:rgba(239,68,68,0.5);color:#FCA5A5;">🏠 Salir al Menú Principal</button>
       </div>
@@ -300,14 +415,14 @@
   </div>
 
   <!-- Scripts del Juego (cargados exclusivamente desde origen local bajo CSP estricto) -->
-  <script src="src/three.min.js?v=16"></script>
-  <script src="src/peerjs.min.js?v=16"></script>
-  <script src="src/kartModelData.js?v=16"></script>
-  <script src="src/racersData.js?v=16"></script>
-  <script src="src/kartFactory.js?v=16"></script>
-  <script src="src/trackBuilder.js?v=16"></script>
-  <script src="src/weatherAndAudio.js?v=16"></script>
-  <script src="src/networkManager.js?v=16"></script>
-  <script src="src/gameEngine.js?v=16"></script>
+  <script src="src/three.min.js?v=17"></script>
+  <script src="src/peerjs.min.js?v=17"></script>
+  <script src="src/kartModelData.js?v=17"></script>
+  <script src="src/racersData.js?v=17"></script>
+  <script src="src/kartFactory.js?v=17"></script>
+  <script src="src/trackBuilder.js?v=17"></script>
+  <script src="src/weatherAndAudio.js?v=17"></script>
+  <script src="src/networkManager.js?v=17"></script>
+  <script src="src/gameEngine.js?v=17"></script>
 </body>
 </html>

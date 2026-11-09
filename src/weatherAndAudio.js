@@ -234,11 +234,17 @@
       return muted;
     }
 
+    function setMuted(val) {
+      muted = Boolean(val);
+      return muted;
+    }
+
     return {
       init,
       updateEngine,
       playBeep,
       toggleMute,
+      setMuted,
       isMuted: () => muted
     };
   };

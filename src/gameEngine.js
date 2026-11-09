@@ -130,6 +130,163 @@
     );
   };
 
+  // ==================== CONFIGURACIÓN DEL USUARIO Y PERSISTENCIA (LOCALSTORAGE) ====================
+  const SETTINGS_KEY = "kartlibre3d_user_settings";
+  const appSettings = {
+    steerSensitivity: 1.0,        // 0.5 a 2.0 (50% a 200%, default 100%)
+    controlMode: "ACCELEROMETER",  // "ACCELEROMETER" o "JOYSTICK"
+    invertAccelerometer: true,    // true: derecha es izquierda y viceversa
+    audioEnabled: true,           // true o false
+    difficulty: "MEDIUM",         // "EASY" | "MEDIUM" | "HARD"
+    rainMode: true,               // true (lluvia) | false (seco)
+    raceLaps: 30                  // Vueltas para la Carrera Final (1 a 100, default 30)
+  };
+
+  function loadSavedSettings() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.steerSensitivity === "number" && !isNaN(parsed.steerSensitivity)) {
+          appSettings.steerSensitivity = Math.max(0.5, Math.min(2.0, parsed.steerSensitivity));
+        }
+        if (parsed.controlMode === "ACCELEROMETER" || parsed.controlMode === "JOYSTICK") {
+          appSettings.controlMode = parsed.controlMode;
+        }
+        if (typeof parsed.invertAccelerometer === "boolean") {
+          appSettings.invertAccelerometer = parsed.invertAccelerometer;
+        }
+        if (typeof parsed.audioEnabled === "boolean") {
+          appSettings.audioEnabled = parsed.audioEnabled;
+        }
+        if (parsed.difficulty === "EASY" || parsed.difficulty === "MEDIUM" || parsed.difficulty === "HARD") {
+          appSettings.difficulty = parsed.difficulty;
+        }
+        if (typeof parsed.rainMode === "boolean") {
+          appSettings.rainMode = parsed.rainMode;
+        }
+        if (typeof parsed.raceLaps === "number" && parsed.raceLaps >= 1 && parsed.raceLaps <= 100) {
+          appSettings.raceLaps = Math.round(parsed.raceLaps);
+        }
+      }
+    } catch (e) {
+      console.warn("No se pudo leer localStorage:", e);
+    }
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+    } catch (e) {
+      console.warn("No se pudo guardar en localStorage:", e);
+    }
+  }
+
+  function applyRaceLaps(laps) {
+    const num = Math.max(1, Math.min(100, parseInt(laps, 10) || 30));
+    appSettings.raceLaps = num;
+    STAGE_CONFIG.RACE.laps = num;
+    STAGE_CONFIG.RACE.title = `ETAPA 3/3 • CARRERA FINAL (${num} VUELTAS)`;
+    STAGE_CONFIG.RACE.shortTitle = `Carrera Final (${num} Vueltas)`;
+
+    const pillRace = document.getElementById("format-pill-race");
+    if (pillRace) pillRace.textContent = `3° Carrera (${num}V)`;
+
+    const menuLaps = document.getElementById("menu-laps-span");
+    if (menuLaps) menuLaps.textContent = `${num} Vueltas de Carrera Final`;
+
+    const lapsDisplay = document.getElementById("setting-laps-display");
+    if (lapsDisplay) lapsDisplay.textContent = `${num} Vueltas`;
+
+    const lapsInput = document.getElementById("setting-race-laps");
+    if (lapsInput) lapsInput.value = num;
+
+    document.querySelectorAll(".laps-pill").forEach((p) => {
+      p.classList.toggle("active", parseInt(p.getAttribute("data-laps"), 10) === num);
+    });
+  }
+
+  function updateControlModeUI() {
+    const joyBase = document.getElementById("steer-joystick-base");
+    const accelContainer = document.getElementById("accel-steer-container");
+    const invertGroup = document.getElementById("setting-group-invert-accel");
+
+    const isAccel = appSettings.controlMode === "ACCELEROMETER";
+
+    if (accelContainer) {
+      accelContainer.style.display = isAccel ? "flex" : "none";
+    }
+    if (joyBase) {
+      joyBase.style.display = isAccel ? "none" : "flex";
+      if (!isAccel) {
+        joyBase.classList.remove("desktop-only-joystick");
+      } else {
+        joyBase.classList.add("desktop-only-joystick");
+      }
+    }
+    if (invertGroup) {
+      invertGroup.style.display = isAccel ? "flex" : "none";
+    }
+
+    const btnAccel = document.getElementById("btn-control-accel");
+    const btnJoy = document.getElementById("btn-control-joystick");
+    if (btnAccel) btnAccel.classList.toggle("active", isAccel);
+    if (btnJoy) btnJoy.classList.toggle("active", !isAccel);
+  }
+
+  function applyAllSettings() {
+    // 1. Sensibilidad de giro
+    const sensInput = document.getElementById("setting-steer-sens");
+    const sensVal = document.getElementById("setting-steer-sens-val");
+    const sensPercent = Math.round((appSettings.steerSensitivity || 1.0) * 100);
+    if (sensInput) sensInput.value = sensPercent;
+    if (sensVal) sensVal.textContent = sensPercent + "%";
+
+    // 2. Control móvil (Acelerómetro vs Joystick)
+    updateControlModeUI();
+
+    // 3. Inversión acelerómetro
+    const btnInvertOn = document.getElementById("btn-invert-accel-on");
+    const btnInvertOff = document.getElementById("btn-invert-accel-off");
+    if (btnInvertOn) btnInvertOn.classList.toggle("active", appSettings.invertAccelerometer);
+    if (btnInvertOff) btnInvertOff.classList.toggle("active", !appSettings.invertAccelerometer);
+
+    // 4. Audio
+    const btnAudioOn = document.getElementById("btn-audio-on");
+    const btnAudioOff = document.getElementById("btn-audio-off");
+    if (btnAudioOn) btnAudioOn.classList.toggle("active", appSettings.audioEnabled);
+    if (btnAudioOff) btnAudioOff.classList.toggle("active", !appSettings.audioEnabled);
+    if (audio) audio.setMuted(!appSettings.audioEnabled);
+    const hudAudio = document.getElementById("btn-toggle-audio");
+    if (hudAudio) hudAudio.textContent = appSettings.audioEnabled ? "🔊" : "🔇";
+
+    // 5. Dificultad
+    currentDifficulty = appSettings.difficulty;
+    document.querySelectorAll(".diff-pill, .setting-diff-pill").forEach((p) => {
+      p.classList.toggle("active", p.getAttribute("data-diff") === currentDifficulty);
+    });
+    const hudDiffEl = document.getElementById("hud-diff-label");
+    if (hudDiffEl && DIFFICULTY_CONFIG[currentDifficulty]) {
+      hudDiffEl.textContent = DIFFICULTY_CONFIG[currentDifficulty].label;
+    }
+
+    // 6. Clima
+    isRainMode = appSettings.rainMode;
+    document.querySelectorAll(".weather-pill, .setting-weather-pill").forEach((p) => {
+      p.classList.toggle("active", (p.getAttribute("data-rain") === "true") === isRainMode);
+    });
+    setupSkyAndLights(isRainMode);
+    if (track) track.setWeatherMode(isRainMode);
+    if (weather) weather.setRainMode(isRainMode);
+    const btnWeather = document.getElementById("btn-weather-label");
+    if (btnWeather) {
+      btnWeather.textContent = isRainMode ? "Clima: Lluvia (Mojado)" : "Clima: Soleado (Seco)";
+    }
+
+    // 7. Vueltas carrera final
+    applyRaceLaps(appSettings.raceLaps);
+  }
+
   // ==================== CONTROL POR ACELERÓMETRO EN DISPOSITIVOS MÓVILES ====================
   let accelActive = false;
   let rawTiltDeg = 0;
@@ -187,6 +344,7 @@
   }
 
   function processTiltAngle(degrees) {
+    if (appSettings.controlMode !== "ACCELEROMETER") return;
     accelActive = true;
     const adjusted = degrees - tiltZeroOffset;
     rawTiltDeg = THREE.MathUtils.clamp(adjusted, -45, 45);
@@ -204,8 +362,9 @@
     } else {
       const norm = Math.min(1.0, (absTilt - deadzone) / (maxTilt - deadzone));
       const progressive = Math.pow(norm, 1.10);
-      // rawTiltDeg < 0 es giro a la IZQUIERDA (-1 en steer), rawTiltDeg > 0 a la DERECHA (+1)
-      targetTiltSteer = (rawTiltDeg < 0 ? -1 : 1) * progressive;
+      // Inversión: si invertAccelerometer está activo, derecha es izquierda y viceversa
+      const invertFactor = appSettings.invertAccelerometer ? -1 : 1;
+      targetTiltSteer = (rawTiltDeg < 0 ? -1 : 1) * progressive * invertFactor;
     }
   }
 
@@ -571,7 +730,8 @@
 
       // 1. Respuesta ágil y directa de la dirección (idéntica y unificada para web y móvil)
       const maxSteerLock = 0.42 * (1.0 - speedRatio * 0.18);
-      const targetSteer = rawSteerInput * maxSteerLock;
+      const sensitivity = typeof appSettings.steerSensitivity === "number" ? appSettings.steerSensitivity : 1.0;
+      const targetSteer = rawSteerInput * maxSteerLock * sensitivity;
       const isCentering = Math.abs(targetSteer) < Math.abs(k.steerAngle) && Math.sign(targetSteer || k.steerAngle) === Math.sign(k.steerAngle);
       const steerResponseRate = isCentering ? 6.8 : (5.2 * (1.0 - speedRatio * 0.20));
       k.steerAngle = THREE.MathUtils.lerp(k.steerAngle, targetSteer, Math.min(1, dt * steerResponseRate));
@@ -1148,17 +1308,20 @@
     const elTiltBadge = document.getElementById("accel-tilt-badge");
     if (elTiltText && elTiltBadge) {
       const deg = Math.round(rawTiltDeg);
+      const isInv = appSettings.invertAccelerometer;
       if (Math.abs(deg) <= 1) {
         elTiltText.textContent = "● CENTRADO";
         elTiltBadge.classList.remove("tilting-left", "tilting-right");
       } else if (deg < -1) {
-        elTiltText.textContent = `◀ ${Math.abs(deg)}° IZQ`;
-        elTiltBadge.classList.add("tilting-left");
-        elTiltBadge.classList.remove("tilting-right");
+        const effectiveTurnLeft = !isInv;
+        elTiltText.textContent = isInv ? `DER [INV] ${Math.abs(deg)}° ▶` : `◀ ${Math.abs(deg)}° IZQ`;
+        elTiltBadge.classList.toggle("tilting-left", effectiveTurnLeft);
+        elTiltBadge.classList.toggle("tilting-right", !effectiveTurnLeft);
       } else {
-        elTiltText.textContent = `DER ${Math.abs(deg)}° ▶`;
-        elTiltBadge.classList.add("tilting-right");
-        elTiltBadge.classList.remove("tilting-left");
+        const effectiveTurnLeft = isInv;
+        elTiltText.textContent = isInv ? `◀ IZQ [INV] ${Math.abs(deg)}°` : `DER ${Math.abs(deg)}° ▶`;
+        elTiltBadge.classList.toggle("tilting-left", effectiveTurnLeft);
+        elTiltBadge.classList.toggle("tilting-right", !effectiveTurnLeft);
       }
     }
 
@@ -1306,7 +1469,10 @@
       return;
     }
 
-    if (audio) audio.init();
+    if (audio) {
+      audio.init();
+      audio.setMuted(!appSettings.audioEnabled);
+    }
     requestSensorPermissions();
     currentStage = stageId || "RECON";
 
@@ -1370,6 +1536,8 @@
 
   function toggleWeatherMode(forceRain) {
     isRainMode = typeof forceRain === "boolean" ? forceRain : !isRainMode;
+    appSettings.rainMode = isRainMode;
+    saveSettings();
     setupSkyAndLights(isRainMode);
     if (track) track.setWeatherMode(isRainMode);
     if (weather) weather.setRainMode(isRainMode);
@@ -1378,7 +1546,7 @@
     if (btnWeather) {
       btnWeather.textContent = isRainMode ? "Clima: Lluvia (Mojado)" : "Clima: Soleado (Seco)";
     }
-    document.querySelectorAll(".weather-pill").forEach((el) => {
+    document.querySelectorAll(".weather-pill, .setting-weather-pill").forEach((el) => {
       const val = el.getAttribute("data-rain") === "true";
       el.classList.toggle("active", val === isRainMode);
     });
@@ -1700,13 +1868,25 @@
       btnAudio.addEventListener("click", () => {
         if (!audio) return;
         const muted = audio.toggleMute();
+        appSettings.audioEnabled = !muted;
+        saveSettings();
         btnAudio.textContent = muted ? "🔇" : "🔊";
+        const btnAudioOn = document.getElementById("btn-audio-on");
+        const btnAudioOff = document.getElementById("btn-audio-off");
+        if (btnAudioOn) btnAudioOn.classList.toggle("active", !muted);
+        if (btnAudioOff) btnAudioOff.classList.toggle("active", muted);
       });
     }
 
     document.querySelectorAll(".weather-pill").forEach((pill) => {
       pill.addEventListener("click", () => {
-        toggleWeatherMode(pill.getAttribute("data-rain") === "true");
+        const rain = pill.getAttribute("data-rain") === "true";
+        appSettings.rainMode = rain;
+        saveSettings();
+        toggleWeatherMode(rain);
+        document.querySelectorAll(".setting-weather-pill").forEach((p) => {
+          p.classList.toggle("active", (p.getAttribute("data-rain") === "true") === rain);
+        });
         if (net && net.getMode() === "HOST") {
           net.broadcastRosterSync();
         }
@@ -1718,7 +1898,9 @@
         const diffId = pill.getAttribute("data-diff");
         if (DIFFICULTY_CONFIG[diffId]) {
           currentDifficulty = diffId;
-          document.querySelectorAll(".diff-pill").forEach((p) => {
+          appSettings.difficulty = diffId;
+          saveSettings();
+          document.querySelectorAll(".diff-pill, .setting-diff-pill").forEach((p) => {
             p.classList.toggle("active", p.getAttribute("data-diff") === currentDifficulty);
           });
           const hudDiffEl = document.getElementById("hud-diff-label");
@@ -1851,7 +2033,194 @@
     }
   }
 
+  function setupSettingsModalListeners() {
+    const modal = document.getElementById("settings-modal");
+    const openBtns = [
+      document.getElementById("btn-settings-menu"),
+      document.getElementById("btn-settings-hud"),
+      document.getElementById("btn-settings-pause")
+    ];
+    const closeBtn = document.getElementById("btn-close-settings");
+
+    openBtns.forEach((btn) => {
+      if (btn) {
+        btn.addEventListener("click", () => {
+          applyAllSettings();
+          if (modal) modal.classList.remove("hidden");
+        });
+      }
+    });
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        saveSettings();
+        if (modal) modal.classList.add("hidden");
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          saveSettings();
+          modal.classList.add("hidden");
+        }
+      });
+    }
+
+    // Slider Sensibilidad
+    const sensInput = document.getElementById("setting-steer-sens");
+    const sensVal = document.getElementById("setting-steer-sens-val");
+    if (sensInput) {
+      sensInput.addEventListener("input", (e) => {
+        const val = parseInt(e.target.value, 10);
+        if (sensVal) sensVal.textContent = val + "%";
+        appSettings.steerSensitivity = val / 100;
+        saveSettings();
+      });
+    }
+
+    // Modo de Control en móvil (Acelerómetro vs Joystick)
+    const btnAccel = document.getElementById("btn-control-accel");
+    const btnJoy = document.getElementById("btn-control-joystick");
+    if (btnAccel) {
+      btnAccel.addEventListener("click", () => {
+        appSettings.controlMode = "ACCELEROMETER";
+        updateControlModeUI();
+        saveSettings();
+      });
+    }
+    if (btnJoy) {
+      btnJoy.addEventListener("click", () => {
+        appSettings.controlMode = "JOYSTICK";
+        updateControlModeUI();
+        saveSettings();
+      });
+    }
+
+    // Invertir Acelerómetro
+    const btnInvOn = document.getElementById("btn-invert-accel-on");
+    const btnInvOff = document.getElementById("btn-invert-accel-off");
+    if (btnInvOn) {
+      btnInvOn.addEventListener("click", () => {
+        appSettings.invertAccelerometer = true;
+        btnInvOn.classList.add("active");
+        if (btnInvOff) btnInvOff.classList.remove("active");
+        saveSettings();
+      });
+    }
+    if (btnInvOff) {
+      btnInvOff.addEventListener("click", () => {
+        appSettings.invertAccelerometer = false;
+        btnInvOff.classList.add("active");
+        if (btnInvOn) btnInvOn.classList.remove("active");
+        saveSettings();
+      });
+    }
+
+    // Audio ON / OFF
+    const btnAudioOn = document.getElementById("btn-audio-on");
+    const btnAudioOff = document.getElementById("btn-audio-off");
+    if (btnAudioOn) {
+      btnAudioOn.addEventListener("click", () => {
+        appSettings.audioEnabled = true;
+        btnAudioOn.classList.add("active");
+        if (btnAudioOff) btnAudioOff.classList.remove("active");
+        if (audio) audio.setMuted(false);
+        const hudAudio = document.getElementById("btn-toggle-audio");
+        if (hudAudio) hudAudio.textContent = "🔊";
+        saveSettings();
+      });
+    }
+    if (btnAudioOff) {
+      btnAudioOff.addEventListener("click", () => {
+        appSettings.audioEnabled = false;
+        btnAudioOff.classList.add("active");
+        if (btnAudioOn) btnAudioOn.classList.remove("active");
+        if (audio) audio.setMuted(true);
+        const hudAudio = document.getElementById("btn-toggle-audio");
+        if (hudAudio) hudAudio.textContent = "🔇";
+        saveSettings();
+      });
+    }
+
+    // Dificultad en Settings
+    document.querySelectorAll(".setting-diff-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        const diff = pill.getAttribute("data-diff");
+        if (DIFFICULTY_CONFIG[diff]) {
+          appSettings.difficulty = diff;
+          currentDifficulty = diff;
+          document.querySelectorAll(".diff-pill, .setting-diff-pill").forEach((p) => {
+            p.classList.toggle("active", p.getAttribute("data-diff") === diff);
+          });
+          const hudDiffEl = document.getElementById("hud-diff-label");
+          if (hudDiffEl) hudDiffEl.textContent = DIFFICULTY_CONFIG[diff].label;
+          if (net && net.getMode() === "HOST") {
+            net.broadcastRosterSync();
+          }
+          saveSettings();
+        }
+      });
+    });
+
+    // Clima en Settings
+    document.querySelectorAll(".setting-weather-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        const rain = pill.getAttribute("data-rain") === "true";
+        appSettings.rainMode = rain;
+        toggleWeatherMode(rain);
+        document.querySelectorAll(".setting-weather-pill").forEach((p) => {
+          p.classList.toggle("active", (p.getAttribute("data-rain") === "true") === rain);
+        });
+        if (net && net.getMode() === "HOST") {
+          net.broadcastRosterSync();
+        }
+        saveSettings();
+      });
+    });
+
+    // Vueltas en Settings (Stepper + Presets)
+    const btnMinus = document.getElementById("btn-laps-minus");
+    const btnPlus = document.getElementById("btn-laps-plus");
+    const inputLaps = document.getElementById("setting-race-laps");
+
+    if (btnMinus) {
+      btnMinus.addEventListener("click", () => {
+        const current = parseInt(inputLaps.value, 10) || 30;
+        applyRaceLaps(Math.max(1, current - 1));
+        saveSettings();
+      });
+    }
+    if (btnPlus) {
+      btnPlus.addEventListener("click", () => {
+        const current = parseInt(inputLaps.value, 10) || 30;
+        applyRaceLaps(Math.min(100, current + 1));
+        saveSettings();
+      });
+    }
+    if (inputLaps) {
+      inputLaps.addEventListener("input", (e) => {
+        const val = parseInt(e.target.value, 10);
+        if (!isNaN(val) && val >= 1 && val <= 100) {
+          applyRaceLaps(val);
+          saveSettings();
+        }
+      });
+    }
+    document.querySelectorAll(".laps-pill").forEach((p) => {
+      p.addEventListener("click", () => {
+        const laps = parseInt(p.getAttribute("data-laps"), 10);
+        applyRaceLaps(laps);
+        saveSettings();
+      });
+    });
+  }
+
   window.initKartRacerGame = function () {
+    loadSavedSettings();
+    isRainMode = appSettings.rainMode;
+    currentDifficulty = appSettings.difficulty;
+
     const container = document.getElementById("webgl-container");
     const visorCanvas = document.getElementById("visor-rain-canvas");
     minimapCanvas = document.getElementById("minimap-canvas");
@@ -2014,6 +2383,8 @@
     buildRacerCardsUI();
     spawnGrid(currentGridOrder);
     bindControls();
+    setupSettingsModalListeners();
+    applyAllSettings();
 
     try {
       const params = new URLSearchParams(window.location.search);
@@ -2061,7 +2432,7 @@
 
       // Sincronización del acelerómetro en dispositivos móviles (inclinar el celular para doblar)
       const hasKeyboardSteer = keys["KeyA"] || keys["KeyD"] || keys["ArrowLeft"] || keys["ArrowRight"];
-      if ((isMobilePlatform() || accelActive) && !hasKeyboardSteer) {
+      if ((isMobilePlatform() || accelActive) && appSettings.controlMode === "ACCELEROMETER" && !hasKeyboardSteer) {
         smoothTiltSteer = THREE.MathUtils.lerp(smoothTiltSteer, targetTiltSteer, Math.min(1, dt * 18.0));
         if (smoothTiltSteer < -0.01) {
           input.left = Math.abs(smoothTiltSteer);
