@@ -1,6 +1,8 @@
 # 🏎️ KartLibre3D (Kart-Racer 3D)
 
-Juego de carreras de kartings en 3D ambientado en el **Kartódromo Ciudad de Buenos Aires** (circuito oficial de 10 curvas), desarrollado con WebGL / Three.js y ejecutable directamente en el navegador sin necesidad de servidores externos.
+![KartLibre 3D Web Game](assets/logo-kartlibre.jpg)
+
+Juego de carreras de kartings en 3D ambientado en el **Kartódromo Ciudad de Buenos Aires** (circuito oficial de 10 curvas), desarrollado con WebGL / Three.js, instalable como aplicación (**PWA**) en móviles y escritorio, y ejecutable directamente en el navegador.
 
 ## ✨ Características Principales
 
@@ -39,7 +41,14 @@ Juego de carreras de kartings en 3D ambientado en el **Kartódromo Ciudad de Bue
 | **Cambiar Cámara (1ªP / 3ªP)** | `C` | Botón `🎥 Cámara` |
 | **Cambiar Clima (Lluvia / Seco)** | `V` | Botón `🌧️ Clima` |
 
+## 📱 Instalación en Dispositivos Móviles (PWA) y Diseño Responsivo
+
+- **Icono Oficial de App e Instalación**: Incluye `manifest.webmanifest` e iconos adaptativos (`assets/icon-512.png`, `assets/icon-192.png`, `assets/apple-touch-icon.png` y `assets/favicon.png`) para instalar **KartLibre 3D** en la pantalla de inicio de Android, iOS y PC.
+- **Interfaz 100% Responsiva (Horizontal y Vertical)**:
+  - Menú de inicio adaptable con desplazamiento táctil fluido.
+  - Controles multitáctiles simultáneos: volante virtual con giro analógico por arrastre táctil + botones `◀` / `▶` en el pulgar izquierdo y pedales `ACEL`, `FRENO` y `⚡ BOOST` en el pulgar derecho.
+
 ## 🚀 Cómo Ejecutar
 
-Haz doble clic en `Iniciar-Juego.bat` o abre `index.html` directamente en cualquier navegador moderno (Chrome, Edge, Firefox, Brave).
+Haz doble clic en `Iniciar-Juego.bat` o abre `index.html` directamente en cualquier navegador moderno (Chrome, Edge, Firefox, Safari, Brave).
 

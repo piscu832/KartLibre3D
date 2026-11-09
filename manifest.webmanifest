@@ -1,0 +1,30 @@
+{
+  "name": "KartLibre 3D • Kartódromo Ciudad de Buenos Aires",
+  "short_name": "KartLibre 3D",
+  "description": "Juego de carreras de kartings en 3D con 8 corredores, formato de 3 etapas (Reconocimiento, Clasificación y 30 vueltas de Carrera) y física realista.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#10141C",
+  "theme_color": "#10141C",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

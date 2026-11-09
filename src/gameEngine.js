@@ -1160,6 +1160,7 @@
       el.addEventListener("mouseleave", end);
       el.addEventListener("touchstart", start, { passive: false });
       el.addEventListener("touchend", end, { passive: false });
+      el.addEventListener("touchcancel", end, { passive: false });
     }
 
     bindHoldButton("pedal-gas", () => { input.throttle = 1; }, () => { input.throttle = 0; });
@@ -1167,6 +1168,55 @@
     bindHoldButton("btn-boost", () => { input.boost = true; }, () => { input.boost = false; });
     bindHoldButton("steer-left-btn", () => { input.left = 1; }, () => { input.left = 0; });
     bindHoldButton("steer-right-btn", () => { input.right = 1; }, () => { input.right = 0; });
+
+    // Soporte táctil analógico sobre el volante virtual en dispositivos móviles
+    const wheelEl = document.getElementById("ui-steering-wheel");
+    if (wheelEl) {
+      let wheelTouchId = null;
+      const updateWheelTouch = (clientX) => {
+        const rect = wheelEl.getBoundingClientRect();
+        const centerX = rect.left + rect.width * 0.5;
+        const normX = THREE.MathUtils.clamp((clientX - centerX) / (rect.width * 0.45), -1, 1);
+        if (normX < -0.08) {
+          input.left = Math.abs(normX);
+          input.right = 0;
+        } else if (normX > 0.08) {
+          input.right = Math.abs(normX);
+          input.left = 0;
+        } else {
+          input.left = 0;
+          input.right = 0;
+        }
+      };
+
+      wheelEl.addEventListener("touchstart", (ev) => {
+        ev.preventDefault();
+        if (ev.changedTouches.length > 0) {
+          const t = ev.changedTouches[0];
+          wheelTouchId = t.identifier;
+          updateWheelTouch(t.clientX);
+        }
+      }, { passive: false });
+
+      wheelEl.addEventListener("touchmove", (ev) => {
+        ev.preventDefault();
+        for (let i = 0; i < ev.touches.length; i++) {
+          if (ev.touches[i].identifier === wheelTouchId) {
+            updateWheelTouch(ev.touches[i].clientX);
+            break;
+          }
+        }
+      }, { passive: false });
+
+      const endWheelTouch = (ev) => {
+        ev.preventDefault();
+        wheelTouchId = null;
+        input.left = 0;
+        input.right = 0;
+      };
+      wheelEl.addEventListener("touchend", endWheelTouch, { passive: false });
+      wheelEl.addEventListener("touchcancel", endWheelTouch, { passive: false });
+    }
 
     const btnStart = document.getElementById("btn-start-race");
     if (btnStart) {

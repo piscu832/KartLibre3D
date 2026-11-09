@@ -2,13 +2,23 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <!-- Cabeceras de Seguridad Anti-XSS, Anti-Clickjacking y Bloqueo de Scripts Externos / Inline -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none';" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <meta name="referrer" content="no-referrer" />
-  <title>Kart-Racer 3D • Kartódromo Ciudad de Buenos Aires</title>
-  <link rel="stylesheet" href="src/styles.css?v=7" />
+  <!-- Configuración PWA e Iconos de Instalación para Dispositivos Móviles y Escritorio -->
+  <meta name="theme-color" content="#10141C" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="KartLibre 3D" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
+  <title>KartLibre 3D • Kartódromo Ciudad de Buenos Aires</title>
+  <link rel="stylesheet" href="src/styles.css?v=8" />
 </head>
 <body>
   <!-- Escena 3D WebGL (Three.js) -->
@@ -20,8 +30,13 @@
   <!-- ==================== MENÚ DE INICIO Y SELECCIÓN DE LOS 8 CORREDORES ==================== -->
   <div id="start-menu">
     <div class="menu-panel menu-left">
-      <span class="brand-badge">Karting Pro 3D • Oficial</span>
-      <h1 class="menu-title">Kart-Racer 3D</h1>
+      <div class="brand-header-row">
+        <img src="assets/icon-192.png" alt="KartLibre 3D Icon" class="brand-app-icon" />
+        <div>
+          <span class="brand-badge">KartLibre 3D • Oficial</span>
+          <h1 class="menu-title">Kart-Racer 3D</h1>
+        </div>
+      </div>
       <p class="menu-subtitle">
         Elige tu piloto de la lista oficial. Formato de Gran Premio completo contra los otros 7 corredores:
         <strong>1 Vuelta de Reconocimiento</strong>, <strong>3 Vueltas de Clasificación</strong> (ordena la grilla) y <strong>30 Vueltas de Carrera Final</strong>.
@@ -234,12 +249,12 @@
   </div>
 
   <!-- Scripts del Juego (cargados exclusivamente desde origen local bajo CSP estricto) -->
-  <script src="src/three.min.js?v=7"></script>
-  <script src="src/kartModelData.js?v=7"></script>
-  <script src="src/racersData.js?v=7"></script>
-  <script src="src/kartFactory.js?v=7"></script>
-  <script src="src/trackBuilder.js?v=7"></script>
-  <script src="src/weatherAndAudio.js?v=7"></script>
-  <script src="src/gameEngine.js?v=7"></script>
+  <script src="src/three.min.js?v=8"></script>
+  <script src="src/kartModelData.js?v=8"></script>
+  <script src="src/racersData.js?v=8"></script>
+  <script src="src/kartFactory.js?v=8"></script>
+  <script src="src/trackBuilder.js?v=8"></script>
+  <script src="src/weatherAndAudio.js?v=8"></script>
+  <script src="src/gameEngine.js?v=8"></script>
 </body>
 </html>
