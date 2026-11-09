@@ -441,11 +441,11 @@
       const absSpd = Math.abs(k.speed);
       const speedRatio = THREE.MathUtils.clamp(absSpd / MAX_SPEED_MPS, 0, 1.15);
 
-      // 1. Reacción al girar más lenta, progresiva y realista (sensible a la velocidad)
-      const maxSteerLock = 0.33 * (1.0 - speedRatio * 0.24);
+      // 1. Respuesta ágil y directa de la dirección (sensible a la velocidad)
+      const maxSteerLock = 0.42 * (1.0 - speedRatio * 0.18);
       const targetSteer = rawSteerInput * maxSteerLock;
       const isCentering = Math.abs(targetSteer) < Math.abs(k.steerAngle) && Math.sign(targetSteer || k.steerAngle) === Math.sign(k.steerAngle);
-      const steerResponseRate = isCentering ? 2.4 : (1.55 * (1.0 - speedRatio * 0.32));
+      const steerResponseRate = isCentering ? 6.8 : (5.2 * (1.0 - speedRatio * 0.20));
       k.steerAngle = THREE.MathUtils.lerp(k.steerAngle, targetSteer, Math.min(1, dt * steerResponseRate));
 
       const trackInfo = track.findClosestTrackPoint(k.position, k.trackT);
@@ -483,9 +483,9 @@
       k.speed = THREE.MathUtils.clamp(k.speed, -8.0, maxSpd);
 
       // 2. Dinámica de adherencia y resbalamiento (derrape centrífugo) al doblar demasiado rápido
-      const speedFactor = THREE.MathUtils.clamp(absSpd / 3.5, 0, 1);
+      const speedFactor = THREE.MathUtils.clamp(absSpd / 3.2, 0, 1);
       const turnDir = k.speed >= -0.1 ? 1 : -1;
-      const baseTurnRate = 1.92 * (1.0 - speedRatio * 0.35);
+      const baseTurnRate = 2.55 * (1.0 - speedRatio * 0.28);
       const requestedOmega = k.steerAngle * baseTurnRate * speedFactor * turnDir;
 
       // Demanda de fuerza centrípeta lateral vs límite de adherencia de los neumáticos
@@ -1332,16 +1332,16 @@
         const dy = THREE.MathUtils.clamp(clientY - centerY, -maxRadiusY, maxRadiusY);
         joySphere.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
 
-        // Curva exponencial progresiva y suave para sensibilidad realista
+        // Curva progresiva con respuesta inmediata hasta el 100% de giro
         const normX = THREE.MathUtils.clamp(dx / maxRadiusX, -1, 1);
-        const deadzone = 0.06;
+        const deadzone = 0.04;
         const absNorm = Math.abs(normX);
         if (absNorm <= deadzone) {
           input.left = 0;
           input.right = 0;
         } else {
           const rescaled = (absNorm - deadzone) / (1.0 - deadzone);
-          const progressiveSteer = Math.pow(rescaled, 1.85) * 0.72;
+          const progressiveSteer = Math.min(1.0, Math.pow(rescaled, 1.25));
           if (normX < 0) {
             input.left = progressiveSteer;
             input.right = 0;
