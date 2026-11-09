@@ -121,6 +121,15 @@
   };
   const keys = {};
 
+  const isMobilePlatform = () => {
+    return (
+      "ontouchstart" in window ||
+      navigator.maxTouchPoints > 0 ||
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || "") ||
+      (window.matchMedia && window.matchMedia("(max-width: 900px)").matches)
+    );
+  };
+
   function getActiveStageConfig() {
     return STAGE_CONFIG[currentStage] || STAGE_CONFIG.RECON;
   }
@@ -440,12 +449,15 @@
 
       const absSpd = Math.abs(k.speed);
       const speedRatio = THREE.MathUtils.clamp(absSpd / MAX_SPEED_MPS, 0, 1.15);
+      const isMobile = isMobilePlatform();
 
-      // 1. Respuesta ágil y directa de la dirección (sensible a la velocidad)
-      const maxSteerLock = 0.42 * (1.0 - speedRatio * 0.18);
+      // 1. Respuesta ágil y directa de la dirección (en móvil más sensible a los giros y rápida al centrar)
+      const maxSteerLock = (isMobile ? 0.48 : 0.42) * (1.0 - speedRatio * (isMobile ? 0.10 : 0.18));
       const targetSteer = rawSteerInput * maxSteerLock;
       const isCentering = Math.abs(targetSteer) < Math.abs(k.steerAngle) && Math.sign(targetSteer || k.steerAngle) === Math.sign(k.steerAngle);
-      const steerResponseRate = isCentering ? 6.8 : (5.2 * (1.0 - speedRatio * 0.20));
+      const steerResponseRate = isCentering
+        ? (isMobile ? 10.5 : 6.8)
+        : ((isMobile ? 8.2 : 5.2) * (1.0 - speedRatio * (isMobile ? 0.12 : 0.20)));
       k.steerAngle = THREE.MathUtils.lerp(k.steerAngle, targetSteer, Math.min(1, dt * steerResponseRate));
 
       const trackInfo = track.findClosestTrackPoint(k.position, k.trackT);
@@ -485,12 +497,12 @@
       // 2. Dinámica de adherencia y resbalamiento (derrape centrífugo) al doblar demasiado rápido
       const speedFactor = THREE.MathUtils.clamp(absSpd / 3.2, 0, 1);
       const turnDir = k.speed >= -0.1 ? 1 : -1;
-      const baseTurnRate = 2.55 * (1.0 - speedRatio * 0.28);
+      const baseTurnRate = (isMobile ? 3.45 : 2.55) * (1.0 - speedRatio * (isMobile ? 0.16 : 0.28));
       const requestedOmega = k.steerAngle * baseTurnRate * speedFactor * turnDir;
 
       // Demanda de fuerza centrípeta lateral vs límite de adherencia de los neumáticos
       const lateralDemand = absSpd * Math.abs(requestedOmega);
-      const maxTireGrip = (isRainMode ? 7.4 : 10.6) * (onGrass ? 0.52 : (onKerb ? 0.85 : 1.0));
+      const maxTireGrip = (isRainMode ? (isMobile ? 9.8 : 7.4) : (isMobile ? 14.5 : 10.6)) * (onGrass ? 0.52 : (onKerb ? 0.85 : 1.0));
 
       let gripEfficiency = 1.0;
       let targetLateralSlide = -k.steerAngle * absSpd * (isRainMode ? 0.14 : 0.06);
@@ -1332,16 +1344,21 @@
         const dy = THREE.MathUtils.clamp(clientY - centerY, -maxRadiusY, maxRadiusY);
         joySphere.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
 
-        // Curva progresiva con respuesta inmediata hasta el 100% de giro
+        // Curva progresiva con respuesta inmediata (más sensible y ágil en dispositivos móviles)
+        const isMobile = isMobilePlatform();
         const normX = THREE.MathUtils.clamp(dx / maxRadiusX, -1, 1);
-        const deadzone = 0.04;
+        const deadzone = isMobile ? 0.025 : 0.04;
         const absNorm = Math.abs(normX);
         if (absNorm <= deadzone) {
           input.left = 0;
           input.right = 0;
         } else {
           const rescaled = (absNorm - deadzone) / (1.0 - deadzone);
-          const progressiveSteer = Math.min(1.0, Math.pow(rescaled, 1.25));
+          // En móvil la respuesta al giro es significativamente más sensible: con un movimiento ágil
+          // del pulgar (alcanzando el ~55-60% del radio) ya se entrega el 100% de la dirección
+          const progressiveSteer = isMobile
+            ? Math.min(1.0, Math.pow(rescaled, 0.78) * 1.65)
+            : Math.min(1.0, Math.pow(rescaled, 1.25));
           if (normX < 0) {
             input.left = progressiveSteer;
             input.right = 0;
@@ -1420,15 +1437,24 @@
     if (wheelEl) {
       let wheelTouchId = null;
       const updateWheelTouch = (clientX) => {
+        const isMobile = isMobilePlatform();
         const rect = wheelEl.getBoundingClientRect();
         const centerX = rect.left + rect.width * 0.5;
         const normX = THREE.MathUtils.clamp((clientX - centerX) / (rect.width * 0.45), -1, 1);
-        if (normX < -0.08) {
-          input.left = Math.abs(normX);
-          input.right = 0;
-        } else if (normX > 0.08) {
-          input.right = Math.abs(normX);
-          input.left = 0;
+        const deadzone = isMobile ? 0.04 : 0.08;
+        const absNorm = Math.abs(normX);
+        if (absNorm > deadzone) {
+          const rescaled = (absNorm - deadzone) / (1.0 - deadzone);
+          const steerVal = isMobile
+            ? Math.min(1.0, Math.pow(rescaled, 0.80) * 1.55)
+            : Math.abs(normX);
+          if (normX < 0) {
+            input.left = steerVal;
+            input.right = 0;
+          } else {
+            input.right = steerVal;
+            input.left = 0;
+          }
         } else {
           input.left = 0;
           input.right = 0;
