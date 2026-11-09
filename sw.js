@@ -1,19 +1,19 @@
 // Service Worker oficial de KartLibre 3D para instalación PWA en Android y soporte Offline
-const CACHE_NAME = "kartlibre3d-pwa-v10";
+const CACHE_NAME = "kartlibre3d-pwa-v11";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./src/styles.css?v=10",
-  "./src/three.min.js?v=10",
-  "./src/peerjs.min.js?v=10",
-  "./src/kartModelData.js?v=10",
-  "./src/racersData.js?v=10",
-  "./src/kartFactory.js?v=10",
-  "./src/trackBuilder.js?v=10",
-  "./src/weatherAndAudio.js?v=10",
-  "./src/networkManager.js?v=10",
-  "./src/gameEngine.js?v=10",
+  "./src/styles.css?v=11",
+  "./src/three.min.js?v=11",
+  "./src/peerjs.min.js?v=11",
+  "./src/kartModelData.js?v=11",
+  "./src/racersData.js?v=11",
+  "./src/kartFactory.js?v=11",
+  "./src/trackBuilder.js?v=11",
+  "./src/weatherAndAudio.js?v=11",
+  "./src/networkManager.js?v=11",
+  "./src/gameEngine.js?v=11",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
   "./assets/apple-touch-icon.png",
@@ -64,3 +64,4 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+

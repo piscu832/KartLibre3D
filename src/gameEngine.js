@@ -35,20 +35,13 @@
   };
 
   // Configuración de los 3 Niveles de Dificultad de la IA (Fácil, Medio, Difícil)
+  // - Fácil: equivale a la dificultad que antes tenía el nivel Medio
+  // - Medio: equivale a la dificultad que antes tenía el nivel Difícil
+  // - Difícil: dificultad superior de nivel experto (ritmo de punta, paso por curva agresivo y aceleración máxima)
   const DIFFICULTY_CONFIG = {
     EASY: {
       id: "EASY",
       label: "🟢 Fácil",
-      paceMult: 0.83,
-      cornerSpeedMult: 0.82,
-      accelMult: 0.80,
-      linePrecision: 0.45,
-      overtakeRate: 1.5,
-      qualyBaseSec: 41.5
-    },
-    MEDIUM: {
-      id: "MEDIUM",
-      label: "🟡 Medio",
       paceMult: 0.94,
       cornerSpeedMult: 0.94,
       accelMult: 0.96,
@@ -56,15 +49,25 @@
       overtakeRate: 2.2,
       qualyBaseSec: 36.5
     },
-    HARD: {
-      id: "HARD",
-      label: "🔴 Difícil",
+    MEDIUM: {
+      id: "MEDIUM",
+      label: "🟡 Medio",
       paceMult: 1.03,
       cornerSpeedMult: 1.02,
       accelMult: 1.14,
       linePrecision: 1.00,
       overtakeRate: 3.0,
       qualyBaseSec: 33.2
+    },
+    HARD: {
+      id: "HARD",
+      label: "🔴 Difícil",
+      paceMult: 1.14,
+      cornerSpeedMult: 1.12,
+      accelMult: 1.35,
+      linePrecision: 1.00,
+      overtakeRate: 3.8,
+      qualyBaseSec: 29.8
     }
   };
 
