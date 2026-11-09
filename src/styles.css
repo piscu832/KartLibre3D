@@ -1,0 +1,718 @@
+/* Estilos de Interfaz y HUD para Kart-Racer 3D - Kartódromo Ciudad de Buenos Aires */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #10141C;
+  font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+  color: #F8FAFC;
+}
+
+#webgl-container {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+#visor-rain-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ==================== MENÚ PRINCIPAL Y SELECTOR DE LOS 8 CORREDORES ==================== */
+#start-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 36px;
+  background: linear-gradient(90deg, rgba(10, 14, 22, 0.88) 0%, rgba(10, 14, 22, 0.35) 50%, rgba(10, 14, 22, 0.88) 100%);
+  pointer-events: auto;
+}
+
+.menu-panel {
+  background: rgba(15, 21, 32, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  padding: 22px 24px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+}
+
+.menu-left {
+  width: 440px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.menu-right {
+  width: 380px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.brand-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #E51C23, #FF6D00);
+  color: #FFF;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.menu-title {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  color: #FFFFFF;
+}
+
+.menu-subtitle {
+  font-size: 13px;
+  color: #94A3B8;
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #CBD5E1;
+  margin-bottom: 6px;
+}
+
+#racer-selector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.racer-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.68);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  color: #F8FAFC;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  text-align: left;
+}
+
+.racer-card:hover {
+  background: rgba(51, 65, 85, 0.85);
+  transform: translateY(-1px);
+}
+
+.racer-card.active {
+  background: rgba(30, 58, 138, 0.55);
+  border-color: #38BDF8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+}
+
+.racer-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.racer-number {
+  background: rgba(15, 23, 42, 0.82);
+  color: #FFF;
+  font-weight: 900;
+  font-size: 13px;
+  padding: 2px 5px;
+  border-radius: 5px;
+}
+
+.racer-title {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.racer-sub {
+  font-size: 11px;
+  color: #94A3B8;
+}
+
+/* Vista previa del plano oficial Kartódromo-V1.jpeg */
+.track-preview-box {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  text-align: center;
+}
+
+.track-preview-box img {
+  width: 100%;
+  max-height: 155px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.weekend-format-box {
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 12px;
+  padding: 9px 11px;
+}
+
+.format-steps {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.format-pill {
+  background: rgba(2, 132, 199, 0.35);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  color: #F0F9FF;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 7px;
+}
+
+.stage-banner-chip {
+  background: linear-gradient(135deg, #0284C7, #1E3A8A);
+  color: #FFFFFF;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.7px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  margin-bottom: 8px;
+  text-align: center;
+  border: 1px solid rgba(125, 211, 252, 0.5);
+}
+
+.pill-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pill-group-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 7px;
+}
+
+.option-pill {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(30, 41, 59, 0.7);
+  color: #E2E8F0;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.option-pill.active {
+  background: #0284C7;
+  border-color: #7DD3FC;
+  color: #FFFFFF;
+}
+
+.btn-primary-race {
+  margin-top: 4px;
+  padding: 15px 20px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+  color: #FFFFFF;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(22, 163, 74, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary-race:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(22, 163, 74, 0.65);
+}
+
+.controls-hint {
+  font-size: 11.5px;
+  color: #94A3B8;
+  line-height: 1.5;
+  background: rgba(15, 23, 42, 0.65);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ==================== HUD DE CARRERA ==================== */
+#race-hud {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.hud-interactive {
+  pointer-events: auto;
+}
+
+/* Tabla de posiciones de los 8 corredores (Arriba a la izquierda) */
+.hud-leaderboard {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 225px;
+  background: rgba(12, 17, 26, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 10px 12px;
+  backdrop-filter: blur(8px);
+}
+
+.lb-header {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94A3B8;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.lb-row.lb-player {
+  background: rgba(2, 132, 199, 0.38);
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  font-weight: 800;
+}
+
+.lb-rank {
+  width: 24px;
+  color: #FACC15;
+  font-weight: 800;
+}
+
+.lb-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #FFF;
+  flex-shrink: 0;
+}
+
+.lb-num {
+  color: #94A3B8;
+  font-size: 11.5px;
+  width: 22px;
+}
+
+.lb-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lb-lap {
+  font-size: 11px;
+  color: #CBD5E1;
+}
+
+/* Semáforo de Largada (Arriba al centro) */
+#start-lights {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  background: rgba(15, 20, 28, 0.92);
+  padding: 12px 24px;
+  border-radius: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+}
+
+.start-bulb {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #262B35;
+  border: 3px solid #11141A;
+  transition: all 0.12s ease;
+}
+
+.start-bulb.red-on {
+  background: #EF4444;
+  box-shadow: 0 0 22px #EF4444;
+}
+
+.start-bulb.green-on {
+  background: #22C55E;
+  box-shadow: 0 0 22px #22C55E;
+}
+
+/* Minimapa 2D y Botones Superiores Derechos */
+.hud-top-right {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.hud-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.hud-btn {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #F8FAFC;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background 0.15s ease;
+}
+
+.hud-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+}
+
+.hud-btn-pause {
+  background: rgba(220, 38, 38, 0.85);
+  border-color: rgba(252, 165, 165, 0.6);
+}
+
+.hud-btn-pause:hover {
+  background: rgba(185, 28, 28, 0.95);
+}
+
+.minimap-box {
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 8px;
+  backdrop-filter: blur(8px);
+  text-align: center;
+}
+
+.minimap-caption {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+}
+
+/* Volante Virtual en Esquina Inferior Izquierda (Estilo Imagen 2) */
+.hud-bottom-left {
+  position: absolute;
+  bottom: 20px;
+  left: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.virtual-wheel-ring {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  border: 14px solid #1E222A;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 6px 20px rgba(0,0,0,0.6);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.05s linear;
+}
+
+.virtual-wheel-spoke-h {
+  position: absolute;
+  width: 100%;
+  height: 14px;
+  background: #2C323D;
+}
+
+.virtual-wheel-spoke-v {
+  position: absolute;
+  width: 14px;
+  height: 55%;
+  bottom: 0;
+  background: #2C323D;
+}
+
+.virtual-wheel-hub {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #11141A;
+  border: 3px solid #94A3B8;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 900;
+  color: #E2E8F0;
+}
+
+.steer-touch-row {
+  display: flex;
+  gap: 10px;
+}
+
+.steer-touch-btn {
+  width: 58px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #FFF;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* Tablero Inferior (Velocímetro + Tacómetro + Vuelta + Tiempo, posicionado a la izquierda de los pedales como en Imagen 2) */
+.hud-dashboard-center {
+  position: absolute;
+  bottom: 18px;
+  right: 245px;
+  background: rgba(14, 19, 28, 0.88);
+  border: 2px solid rgba(203, 213, 225, 0.3);
+  border-radius: 20px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.dash-stat {
+  text-align: center;
+}
+
+.dash-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #94A3B8;
+  letter-spacing: 0.8px;
+}
+
+.dash-value {
+  font-size: 20px;
+  font-weight: 900;
+  color: #F8FAFC;
+}
+
+.dash-speed-Dial {
+  text-align: center;
+  padding: 0 14px;
+  border-left: 1px solid rgba(255,255,255,0.12);
+  border-right: 1px solid rgba(255,255,255,0.12);
+}
+
+#hud-speed {
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1;
+  color: #38BDF8;
+}
+
+.dash-unit {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94A3B8;
+}
+
+.dash-bars {
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bar-wrap {
+  background: rgba(255, 255, 255, 0.12);
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+#hud-rpm-fill {
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, #22C55E, #EAB308, #EF4444);
+  transition: width 0.06s linear;
+}
+
+#hud-boost-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #0284C7, #38BDF8);
+  transition: width 0.08s linear;
+}
+
+/* Pedales y Nitro a la Derecha (Estilo Imagen 2) */
+.hud-bottom-right {
+  position: absolute;
+  bottom: 20px;
+  right: 24px;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.boost-circle-btn {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #0284C7 0%, #0F172A 100%);
+  border: 2px solid #38BDF8;
+  color: #FFF;
+  font-weight: 900;
+  font-size: 11px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.5);
+}
+
+.pedal-btn {
+  border-radius: 12px;
+  border: 2px solid #64748B;
+  background: linear-gradient(180deg, #CBD5E1 0%, #64748B 100%);
+  color: #0F172A;
+  font-weight: 900;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+}
+
+.pedal-btn:active {
+  transform: scale(0.95);
+}
+
+.pedal-brake {
+  width: 58px;
+  height: 76px;
+}
+
+.pedal-gas {
+  width: 62px;
+  height: 118px;
+}
+
+.pedal-grooves {
+  width: 72%;
+  height: 4px;
+  background: rgba(15, 23, 42, 0.45);
+  border-radius: 2px;
+}
+
+/* ==================== MODALES DE PAUSA Y FIN DE CARRERA ==================== */
+#finish-modal, #pause-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(10, 14, 22, 0.85);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.finish-card {
+  width: 500px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 28px;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+}
+
+.finish-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  text-align: left;
+}
+
+.finish-table th, .finish-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+}
+
+.finish-row-player {
+  background: rgba(2, 132, 199, 0.32);
+}
+
+.finish-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+

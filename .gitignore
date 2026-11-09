@@ -1,0 +1,29 @@
+# Archivos de entorno y secretos (NUNCA subir a GitHub)
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+*.crt
+secrets.*
+credentials.*
+
+# Configuraciones locales de IDE y Sistema Operativo
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs y temporales
+*.log
+npm-debug.log*
+tmp/
+temp/
+
