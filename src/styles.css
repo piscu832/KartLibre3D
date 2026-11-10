@@ -751,79 +751,153 @@ body, html {
   color: rgba(255, 255, 255, 0.35);
 }
 
-/* Joystick Analógico Grande y Transparente para no tapar la visual de la pista */
+/* ==================== JOYSTICK ANALÓGICO REALISTA DE COMPETICIÓN ==================== */
 .joystick-base {
-  width: 235px;
-  height: 145px;
-  border-radius: 34px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1.5px solid rgba(255, 255, 255, 0.20);
-  box-shadow: none;
+  width: 156px;
+  height: 156px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.40) 0%, rgba(10, 15, 26, 0.72) 65%, rgba(30, 41, 59, 0.88) 95%, rgba(71, 85, 105, 0.5) 100%);
+  border: 2px solid rgba(148, 163, 184, 0.35);
+  box-shadow: inset 0 8px 20px rgba(0, 0, 0, 0.85), inset 0 -3px 8px rgba(255, 255, 255, 0.12), 0 10px 28px rgba(0, 0, 0, 0.60);
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
   touch-action: none;
+  backdrop-filter: blur(4px);
+  user-select: none;
 }
 
 .joystick-base:active {
   cursor: grabbing;
-  border-color: rgba(125, 211, 252, 0.45);
-  background: rgba(56, 189, 248, 0.05);
+  border-color: rgba(56, 189, 248, 0.65);
+  box-shadow: inset 0 10px 24px rgba(0, 0, 0, 0.92), 0 0 20px rgba(56, 189, 248, 0.25);
+}
+
+.joystick-bezel-ring {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+.joystick-crosshair-h {
+  position: absolute;
+  width: 78%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.22) 20%, rgba(255, 255, 255, 0.22) 80%, transparent 100%);
+  pointer-events: none;
+}
+
+.joystick-crosshair-v {
+  position: absolute;
+  height: 78%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.22) 20%, rgba(255, 255, 255, 0.22) 80%, transparent 100%);
+  pointer-events: none;
 }
 
 .joystick-track-line {
+  position: absolute;
   width: 84%;
-  height: 3px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px;
+  padding: 0 4px;
   pointer-events: none;
 }
 
 .joystick-dir-hint {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.32);
-  line-height: 1;
+  color: rgba(255, 255, 255, 0.45);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.5px;
 }
 
+/* Palanca Analógica (Knob) con textura de goma, concavidad ergonómica y puntos de agarre */
 .joystick-sphere {
-  width: 58px;
-  height: 58px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
   position: absolute;
   left: 50%;
   top: 50%;
-  margin-left: -29px;
-  margin-top: -29px;
-  background: radial-gradient(circle at 32% 28%, rgba(125, 211, 252, 0.46) 0%, rgba(2, 132, 199, 0.28) 58%, rgba(15, 23, 42, 0.32) 100%);
-  border: 2px solid rgba(186, 230, 253, 0.58);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
-  transition: transform 0.04s linear;
+  margin-left: -33px;
+  margin-top: -33px;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.75));
+  transition: transform 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   pointer-events: none;
 }
 
 .joystick-sphere.active {
-  background: radial-gradient(circle at 32% 28%, rgba(147, 197, 253, 0.62) 0%, rgba(14, 165, 233, 0.42) 55%, rgba(30, 58, 138, 0.45) 100%);
-  border-color: rgba(186, 230, 253, 0.85);
-  box-shadow: 0 0 18px rgba(56, 189, 248, 0.48);
   transition: none;
 }
 
+.joystick-cap-outer {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+  background: repeating-radial-gradient(circle at 50% 50%, #1e293b 0px, #0f172a 3px, #334155 4px, #1e293b 6px);
+  border: 2px solid rgba(148, 163, 184, 0.5);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.35), inset 0 -4px 8px rgba(0, 0, 0, 0.8), 0 4px 10px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.joystick-sphere.active .joystick-cap-outer {
+  border-color: rgba(56, 189, 248, 0.85);
+  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.45), inset 0 -4px 8px rgba(0, 0, 0, 0.8), 0 0 18px rgba(56, 189, 248, 0.55);
+}
+
+/* Cavidad cóncava central para el pulgar */
+.joystick-cap-dish {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 45%, #0f172a 0%, #1e293b 60%, #090d16 100%);
+  box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.9), inset 0 -2px 5px rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Puntos de agarre / micro-muescas ergonómicas (Top, Bottom, Left, Right) */
+.joystick-grip-dots {
+  position: absolute;
+  inset: 4px;
+}
+
+.grip-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+
+.dot-t { top: 2px; left: 50%; transform: translateX(-50%); }
+.dot-b { bottom: 2px; left: 50%; transform: translateX(-50%); }
+.dot-l { left: 2px; top: 50%; transform: translateY(-50%); }
+.dot-r { right: 2px; top: 50%; transform: translateY(-50%); }
+
 .joystick-sphere-shine {
   position: absolute;
-  top: 9px;
-  left: 11px;
-  width: 16px;
-  height: 10px;
+  top: 6px;
+  left: 10px;
+  width: 14px;
+  height: 8px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.38);
-  transform: rotate(-25deg);
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(-35deg);
+  pointer-events: none;
 }
 
 /* Tablero Inferior (Velocímetro + Tacómetro + Vuelta + Tiempo, posicionado a la izquierda de los pedales como en Imagen 2) */
@@ -1395,9 +1469,25 @@ body, html {
     font-size: 7px;
   }
 
-  .desktop-only-joystick,
-  .joystick-base {
+  .desktop-only-joystick {
     display: none !important;
+  }
+
+  .joystick-base {
+    width: 130px;
+    height: 130px;
+  }
+
+  .joystick-sphere {
+    width: 52px;
+    height: 52px;
+    margin-left: -26px;
+    margin-top: -26px;
+  }
+
+  .joystick-cap-dish {
+    width: 34px;
+    height: 34px;
   }
 
   .hud-bottom-right {
@@ -1569,9 +1659,25 @@ body, html {
     font-size: 7px;
   }
 
-  .desktop-only-joystick,
-  .joystick-base {
+  .desktop-only-joystick {
     display: none !important;
+  }
+
+  .joystick-base {
+    width: 130px;
+    height: 130px;
+  }
+
+  .joystick-sphere {
+    width: 52px;
+    height: 52px;
+    margin-left: -26px;
+    margin-top: -26px;
+  }
+
+  .joystick-cap-dish {
+    width: 34px;
+    height: 34px;
   }
 
   .hud-dashboard-center {

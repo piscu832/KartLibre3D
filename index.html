@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
   <title>KartLibre 3D • Kartódromo Ciudad de Buenos Aires</title>
-  <link rel="stylesheet" href="src/styles.css?v=17" />
+  <link rel="stylesheet" href="src/styles.css?v=18" />
 </head>
 <body>
   <!-- Escena 3D WebGL (Three.js) -->
@@ -200,14 +200,27 @@
         </div>
       </div>
 
-      <!-- Joystick Analógico disponible en pantalla grande o escritorio -->
-      <div id="steer-joystick-base" class="joystick-base desktop-only-joystick" title="Desliza suavemente la esfera a la izquierda o derecha para doblar">
+      <!-- Joystick Analógico Realista (Cavidad mecánica cóncava y stick con grip texturado) -->
+      <div id="steer-joystick-base" class="joystick-base desktop-only-joystick" title="Desliza la palanca analógica para doblar con suavidad">
+        <div class="joystick-bezel-ring"></div>
+        <div class="joystick-crosshair-h"></div>
+        <div class="joystick-crosshair-v"></div>
         <div class="joystick-track-line">
-          <span class="joystick-dir-hint">◄</span>
-          <span class="joystick-dir-hint">►</span>
+          <span class="joystick-dir-hint">◄ L</span>
+          <span class="joystick-dir-hint">R ►</span>
         </div>
         <div id="steer-joystick-sphere" class="joystick-sphere">
-          <div class="joystick-sphere-shine"></div>
+          <div class="joystick-cap-outer">
+            <div class="joystick-cap-dish">
+              <div class="joystick-grip-dots">
+                <span class="grip-dot dot-t"></span>
+                <span class="grip-dot dot-b"></span>
+                <span class="grip-dot dot-l"></span>
+                <span class="grip-dot dot-r"></span>
+              </div>
+            </div>
+            <div class="joystick-sphere-shine"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -415,14 +428,14 @@
   </div>
 
   <!-- Scripts del Juego (cargados exclusivamente desde origen local bajo CSP estricto) -->
-  <script src="src/three.min.js?v=17"></script>
-  <script src="src/peerjs.min.js?v=17"></script>
-  <script src="src/kartModelData.js?v=17"></script>
-  <script src="src/racersData.js?v=17"></script>
-  <script src="src/kartFactory.js?v=17"></script>
-  <script src="src/trackBuilder.js?v=17"></script>
-  <script src="src/weatherAndAudio.js?v=17"></script>
-  <script src="src/networkManager.js?v=17"></script>
-  <script src="src/gameEngine.js?v=17"></script>
+  <script src="src/three.min.js?v=18"></script>
+  <script src="src/peerjs.min.js?v=18"></script>
+  <script src="src/kartModelData.js?v=18"></script>
+  <script src="src/racersData.js?v=18"></script>
+  <script src="src/kartFactory.js?v=18"></script>
+  <script src="src/trackBuilder.js?v=18"></script>
+  <script src="src/weatherAndAudio.js?v=18"></script>
+  <script src="src/networkManager.js?v=18"></script>
+  <script src="src/gameEngine.js?v=18"></script>
 </body>
 </html>

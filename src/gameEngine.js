@@ -1640,28 +1640,31 @@
         const rect = joyBase.getBoundingClientRect();
         const centerX = rect.left + rect.width * 0.5;
         const centerY = rect.top + rect.height * 0.5;
-        const maxRadiusX = Math.max(45, (rect.width - joySphere.offsetWidth) * 0.5 - 6);
-        const maxRadiusY = Math.max(20, (rect.height - joySphere.offsetHeight) * 0.5 - 6);
+        const knobWidth = joySphere.offsetWidth || 60;
+        const maxRadius = Math.max(30, (rect.width - knobWidth) * 0.5 - 4);
 
-        const dx = THREE.MathUtils.clamp(clientX - centerX, -maxRadiusX, maxRadiusX);
-        const dy = THREE.MathUtils.clamp(clientY - centerY, -maxRadiusY, maxRadiusY);
-        joySphere.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+        let rawDx = clientX - centerX;
+        let rawDy = clientY - centerY;
+        const dist = Math.hypot(rawDx, rawDy);
+        if (dist > maxRadius && dist > 0) {
+          rawDx = (rawDx / dist) * maxRadius;
+          rawDy = (rawDy / dist) * maxRadius;
+        }
 
-        // Curva progresiva con respuesta inmediata (más sensible y ágil en dispositivos móviles)
-        const isMobile = isMobilePlatform();
-        const normX = THREE.MathUtils.clamp(dx / maxRadiusX, -1, 1);
-        const deadzone = isMobile ? 0.025 : 0.04;
+        joySphere.style.transform = `translate(${rawDx.toFixed(1)}px, ${rawDy.toFixed(1)}px)`;
+
+        // Calibración analógica realista y suave (no hiper-sensible)
+        const normX = THREE.MathUtils.clamp(rawDx / maxRadius, -1, 1);
+        const deadzone = 0.06;
         const absNorm = Math.abs(normX);
         if (absNorm <= deadzone) {
           input.left = 0;
           input.right = 0;
         } else {
           const rescaled = (absNorm - deadzone) / (1.0 - deadzone);
-          // En móvil la respuesta al giro es significativamente más sensible: con un movimiento ágil
-          // del pulgar (alcanzando el ~55-60% del radio) ya se entrega el 100% de la dirección
-          const progressiveSteer = isMobile
-            ? Math.min(1.0, Math.pow(rescaled, 0.78) * 1.65)
-            : Math.min(1.0, Math.pow(rescaled, 1.25));
+          // Curva de aceleración analógica con progresión suave:
+          // Permite micro-ajustes estables en rectas y entrega 100% de giro solo al borde
+          const progressiveSteer = Math.min(1.0, Math.pow(rescaled, 1.40));
           if (normX < 0) {
             input.left = progressiveSteer;
             input.right = 0;
