@@ -1,5 +1,5 @@
 // Service Worker oficial de KartLibre 3D para instalación PWA en Android y soporte Offline
-const CACHE_NAME = "kartlibre3d-pwa-v18";
+const CACHE_NAME = "kartlibre3d-pwa-v19";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
