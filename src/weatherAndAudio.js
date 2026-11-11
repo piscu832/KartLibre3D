@@ -27,7 +27,7 @@
     scene.add(rainPoints);
 
     // 2. Gotas de agua realistas sobre el visor/lente (Idéntico a la Imagen 1 de referencia)
-    const vctx = visorCanvas.getContext("2d");
+    const vctx = visorCanvas ? visorCanvas.getContext("2d") : null;
     const droplets = [];
     const DROPLET_COUNT = 52;
 
@@ -44,6 +44,7 @@
     }
 
     function updateVisorDroplets(dt, speedKmh) {
+      if (!visorCanvas || !vctx) return;
       if (visorCanvas.width !== window.innerWidth || visorCanvas.height !== window.innerHeight) {
         visorCanvas.width = window.innerWidth;
         visorCanvas.height = window.innerHeight;
@@ -120,7 +121,7 @@
     function setRainMode(enabled) {
       isRain = Boolean(enabled);
       rainPoints.visible = isRain;
-      if (!isRain) {
+      if (!isRain && vctx) {
         vctx.clearRect(0, 0, visorCanvas.width, visorCanvas.height);
       }
     }

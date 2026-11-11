@@ -2234,14 +2234,55 @@
 
     scene = new THREE.Scene();
 
-    camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.08, 900);
+    const isMobile = isMobilePlatform();
+    camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.25, 750);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    const rendererOpts = {
+      antialias: !isMobile,
+      powerPreference: "default",
+      precision: isMobile ? "mediump" : "highp",
+      stencil: false,
+      depth: true
+    };
+
+    try {
+      renderer = new THREE.WebGLRenderer(rendererOpts);
+    } catch (e) {
+      console.warn("Fallo WebGLRenderer con opciones estándar, reintentando con opciones mínimas:", e);
+      renderer = new THREE.WebGLRenderer({ antialias: false, stencil: false });
+    }
+
+    const pr = isMobile ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 1.75);
+    renderer.setPixelRatio(pr);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // Evitar desbordes de memoria en GPUs móviles (evita crash y pantalla blanca [x_x] en Chrome/Android)
+    const canUseShadows = !isMobile || (window.innerWidth >= 600 && (navigator.hardwareConcurrency || 4) >= 4);
+    renderer.shadowMap.enabled = canUseShadows;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     container.appendChild(renderer.domElement);
+
+    // Manejo y recuperación de contexto WebGL para prevenir la pantalla blanca [x_x]
+    renderer.domElement.addEventListener("webglcontextlost", (event) => {
+      event.preventDefault();
+      console.warn("KartLibre 3D: WebGL context lost. Previniendo pantalla blanca y recuperando contexto...");
+      renderer.shadowMap.enabled = false;
+      renderer.setPixelRatio(1.0);
+    }, false);
+
+    renderer.domElement.addEventListener("webglcontextrestored", () => {
+      console.info("KartLibre 3D: WebGL context restored exitosamente.");
+      setupSkyAndLights(isRainMode);
+      try {
+        if (renderer) {
+        try {
+          renderer.render(scene, camera);
+        } catch (e) {
+          // Si el contexto se pierde temporalmente, no abortar el bucle animate
+        }
+      }
+      } catch (err) {}
+    }, false);
 
     ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.7);
     scene.add(ambientLight);
@@ -2251,16 +2292,18 @@
 
     sunLight = new THREE.DirectionalLight(0xFFF6E0, 0.9);
     sunLight.position.set(85, 140, 65);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
-    sunLight.shadow.camera.near = 10;
-    sunLight.shadow.camera.far = 420;
-    const d = 160;
+    sunLight.castShadow = canUseShadows;
+    const shadowMapSize = isMobile ? 512 : 1024;
+    sunLight.shadow.mapSize.width = shadowMapSize;
+    sunLight.shadow.mapSize.height = shadowMapSize;
+    sunLight.shadow.camera.near = 15;
+    sunLight.shadow.camera.far = 380;
+    const d = 140;
     sunLight.shadow.camera.left = -d;
     sunLight.shadow.camera.right = d;
     sunLight.shadow.camera.top = d;
     sunLight.shadow.camera.bottom = -d;
+    sunLight.shadow.bias = -0.0006;
     scene.add(sunLight);
 
     track = window.buildKartodromoTrack(scene, isRainMode);
@@ -2420,6 +2463,8 @@
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
+      const currentPr = isMobilePlatform() ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 1.75);
+      renderer.setPixelRatio(currentPr);
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
@@ -2529,7 +2574,13 @@
         updateHUD();
       }
 
-      renderer.render(scene, camera);
+      if (renderer) {
+        try {
+          renderer.render(scene, camera);
+        } catch (e) {
+          // Si el contexto se pierde temporalmente, no abortar el bucle animate
+        }
+      }
     }
 
     requestAnimationFrame(animate);
