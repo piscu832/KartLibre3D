@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
   <title>KartLibre 3D • Kartódromo Ciudad de Buenos Aires</title>
-  <link rel="stylesheet" href="src/styles.css?v=19" />
+  <link rel="stylesheet" href="src/styles.css?v=20" />
 </head>
 <body>
   <!-- Escena 3D WebGL (Three.js) -->
@@ -89,7 +89,7 @@
         <strong>Controles:</strong> <code>W / ↑</code> Acelerar &bull; <code>S / ↓</code> Frenar / Reversa &bull;
         <code>A / D</code> o <code>← / →</code> Doblar &bull; <code>Espacio</code> Boost &bull;
         <code>P / Esc</code> Pausa &bull; <code>C</code> Cámara &bull; <code>V</code> Clima &bull;
-        <strong>📱 Móvil:</strong> Acelerómetro (inclina el celular para doblar)
+        <strong>📱 Móvil:</strong> Joystick Táctil (o Acelerómetro configurable)
       </div>
     </div>
 
@@ -185,7 +185,7 @@
       </div>
     </div>
 
-    <!-- Controles de Dirección: Acelerómetro / Botones Izq-Der / Joystick Analógico -->
+    <!-- Controles de Dirección: Joystick Analógico (Predeterminado) / Acelerómetro en Móvil -->
     <div class="hud-bottom-left hud-interactive">
       <!-- Indicador de Dirección por Acelerómetro para Dispositivos Móviles -->
       <div id="accel-steer-container" class="accel-steer-container" title="Giro controlado por el acelerómetro / giroscopio del móvil">
@@ -200,22 +200,8 @@
         </div>
       </div>
 
-      <!-- Botones Táctiles de Dirección (Izquierda y Derecha) -->
-      <div id="steer-buttons-container" class="steer-buttons-container" title="Toca o mantén presionado para doblar a la izquierda o derecha">
-        <div class="steer-touch-row">
-          <button id="steer-left-btn" class="steer-touch-btn steer-btn-left" aria-label="Girar a la izquierda">
-            <span class="steer-btn-arrow">◀</span>
-            <span class="steer-btn-label">IZQ</span>
-          </button>
-          <button id="steer-right-btn" class="steer-touch-btn steer-btn-right" aria-label="Girar a la derecha">
-            <span class="steer-btn-arrow">▶</span>
-            <span class="steer-btn-label">DER</span>
-          </button>
-        </div>
-      </div>
-
       <!-- Joystick Analógico Realista (Cavidad mecánica cóncava y stick con grip texturado) -->
-      <div id="steer-joystick-base" class="joystick-base desktop-only-joystick" title="Desliza la palanca analógica para doblar con suavidad">
+      <div id="steer-joystick-base" class="joystick-base" title="Desliza la palanca analógica para doblar con suavidad">
         <div class="joystick-bezel-ring"></div>
         <div class="joystick-crosshair-h"></div>
         <div class="joystick-crosshair-v"></div>
@@ -314,17 +300,16 @@
           <div class="settings-hint">Ajusta la velocidad y ángulo de respuesta del volante y giros.</div>
         </div>
 
-        <!-- 2. Método de Dirección en Móvil / Táctil: Botones vs Joystick vs Acelerómetro -->
+        <!-- 2. Método de Dirección en Móvil / Táctil: Joystick (Predeterminado) vs Acelerómetro -->
         <div class="settings-group">
           <div class="settings-group-header">
             <span class="settings-label">📱 Modo de Giro en Móvil / Táctil</span>
           </div>
-          <div class="pill-group pill-group-3">
-            <button id="btn-control-buttons" class="option-pill" data-control="BUTTONS">◀ ▶ Botones (Izq / Der)</button>
-            <button id="btn-control-joystick" class="option-pill" data-control="JOYSTICK">🕹️ Joystick Táctil</button>
-            <button id="btn-control-accel" class="option-pill active" data-control="ACCELEROMETER">📲 Acelerómetro</button>
+          <div class="pill-group">
+            <button id="btn-control-joystick" class="option-pill active" data-control="JOYSTICK">🕹️ Joystick Táctil (Predeterminado)</button>
+            <button id="btn-control-accel" class="option-pill" data-control="ACCELEROMETER">📲 Acelerómetro (Girar Celular)</button>
           </div>
-          <div class="settings-hint">Elige entre botones de izquierda/derecha, palanca analógica o inclinación del dispositivo.</div>
+          <div class="settings-hint">Elige entre la palanca analógica táctil en pantalla o inclinar físicamente el dispositivo.</div>
         </div>
 
         <!-- 3. Invertir Giro en Acelerómetro (Derecha es Izquierda) -->
@@ -443,14 +428,14 @@
   </div>
 
   <!-- Scripts del Juego (cargados exclusivamente desde origen local bajo CSP estricto) -->
-  <script src="src/three.min.js?v=19"></script>
-  <script src="src/peerjs.min.js?v=19"></script>
-  <script src="src/kartModelData.js?v=19"></script>
-  <script src="src/racersData.js?v=19"></script>
-  <script src="src/kartFactory.js?v=19"></script>
-  <script src="src/trackBuilder.js?v=19"></script>
-  <script src="src/weatherAndAudio.js?v=19"></script>
-  <script src="src/networkManager.js?v=19"></script>
-  <script src="src/gameEngine.js?v=19"></script>
+  <script src="src/three.min.js?v=20"></script>
+  <script src="src/peerjs.min.js?v=20"></script>
+  <script src="src/kartModelData.js?v=20"></script>
+  <script src="src/racersData.js?v=20"></script>
+  <script src="src/kartFactory.js?v=20"></script>
+  <script src="src/trackBuilder.js?v=20"></script>
+  <script src="src/weatherAndAudio.js?v=20"></script>
+  <script src="src/networkManager.js?v=20"></script>
+  <script src="src/gameEngine.js?v=20"></script>
 </body>
 </html>

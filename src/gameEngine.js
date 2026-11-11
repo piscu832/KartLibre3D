@@ -134,7 +134,7 @@
   const SETTINGS_KEY = "kartlibre3d_user_settings";
   const appSettings = {
     steerSensitivity: 1.0,        // 0.5 a 2.0 (50% a 200%, default 100%)
-    controlMode: "ACCELEROMETER",  // "BUTTONS" | "JOYSTICK" | "ACCELEROMETER"
+    controlMode: "JOYSTICK",      // Predeterminado: "JOYSTICK" | "ACCELEROMETER"
     invertAccelerometer: true,    // true: derecha es izquierda y viceversa
     audioEnabled: true,           // true o false
     difficulty: "MEDIUM",         // "EASY" | "MEDIUM" | "HARD"
@@ -150,8 +150,10 @@
         if (typeof parsed.steerSensitivity === "number" && !isNaN(parsed.steerSensitivity)) {
           appSettings.steerSensitivity = Math.max(0.5, Math.min(2.0, parsed.steerSensitivity));
         }
-        if (parsed.controlMode === "ACCELEROMETER" || parsed.controlMode === "JOYSTICK" || parsed.controlMode === "BUTTONS") {
+        if (parsed.controlMode === "ACCELEROMETER" || parsed.controlMode === "JOYSTICK") {
           appSettings.controlMode = parsed.controlMode;
+        } else {
+          appSettings.controlMode = "JOYSTICK";
         }
         if (typeof parsed.invertAccelerometer === "boolean") {
           appSettings.invertAccelerometer = parsed.invertAccelerometer;
@@ -209,23 +211,17 @@
   function updateControlModeUI() {
     const joyBase = document.getElementById("steer-joystick-base");
     const accelContainer = document.getElementById("accel-steer-container");
-    const buttonsContainer = document.getElementById("steer-buttons-container");
     const invertGroup = document.getElementById("setting-group-invert-accel");
 
-    const mode = appSettings.controlMode || "ACCELEROMETER";
+    const mode = appSettings.controlMode === "ACCELEROMETER" ? "ACCELEROMETER" : "JOYSTICK";
     const isAccel = mode === "ACCELEROMETER";
-    const isJoy = mode === "JOYSTICK";
-    const isButtons = mode === "BUTTONS";
 
     if (accelContainer) {
       accelContainer.style.display = isAccel ? "flex" : "none";
     }
-    if (buttonsContainer) {
-      buttonsContainer.style.display = isButtons ? "flex" : "none";
-    }
     if (joyBase) {
-      joyBase.style.display = isJoy ? "flex" : "none";
-      if (isJoy) {
+      joyBase.style.display = isAccel ? "none" : "flex";
+      if (!isAccel) {
         joyBase.classList.remove("desktop-only-joystick");
       } else {
         joyBase.classList.add("desktop-only-joystick");
@@ -237,10 +233,8 @@
 
     const btnAccel = document.getElementById("btn-control-accel");
     const btnJoy = document.getElementById("btn-control-joystick");
-    const btnButtons = document.getElementById("btn-control-buttons");
     if (btnAccel) btnAccel.classList.toggle("active", isAccel);
-    if (btnJoy) btnJoy.classList.toggle("active", isJoy);
-    if (btnButtons) btnButtons.classList.toggle("active", isButtons);
+    if (btnJoy) btnJoy.classList.toggle("active", !isAccel);
   }
 
   function applyAllSettings() {
@@ -1638,87 +1632,6 @@
     bindHoldButton("pedal-brake", () => { input.brake = 1; }, () => { input.brake = 0; });
     bindHoldButton("btn-boost", () => { input.boost = true; }, () => { input.boost = false; });
 
-    // ==================== BOTONES TÁCTILES DIRECCIONALES (IZQUIERDA / DERECHA) ====================
-    const steerLeftBtn = document.getElementById("steer-left-btn");
-    const steerRightBtn = document.getElementById("steer-right-btn");
-    const steerBtnsContainer = document.getElementById("steer-buttons-container");
-    if (steerBtnsContainer && steerLeftBtn && steerRightBtn) {
-      let activeSteerTouchId = null;
-
-      const updateBtnTouchState = (touchX, touchY) => {
-        const leftRect = steerLeftBtn.getBoundingClientRect();
-        const rightRect = steerRightBtn.getBoundingClientRect();
-
-        const isOverLeft = touchX >= leftRect.left - 12 && touchX <= leftRect.right + 4 &&
-                           touchY >= leftRect.top - 18 && touchY <= leftRect.bottom + 18;
-        const isOverRight = touchX >= rightRect.left - 4 && touchX <= rightRect.right + 12 &&
-                            touchY >= rightRect.top - 18 && touchY <= rightRect.bottom + 18;
-
-        if (isOverLeft) {
-          input.left = 1;
-          input.right = 0;
-          steerLeftBtn.classList.add("active");
-          steerRightBtn.classList.remove("active");
-        } else if (isOverRight) {
-          input.right = 1;
-          input.left = 0;
-          steerRightBtn.classList.add("active");
-          steerLeftBtn.classList.remove("active");
-        } else {
-          input.left = 0;
-          input.right = 0;
-          steerLeftBtn.classList.remove("active");
-          steerRightBtn.classList.remove("active");
-        }
-      };
-
-      const clearBtnSteer = () => {
-        activeSteerTouchId = null;
-        input.left = 0;
-        input.right = 0;
-        steerLeftBtn.classList.remove("active");
-        steerRightBtn.classList.remove("active");
-      };
-
-      steerBtnsContainer.addEventListener("touchstart", (ev) => {
-        ev.preventDefault();
-        if (ev.changedTouches.length > 0) {
-          const t = ev.changedTouches[0];
-          activeSteerTouchId = t.identifier;
-          updateBtnTouchState(t.clientX, t.clientY);
-        }
-      }, { passive: false });
-
-      steerBtnsContainer.addEventListener("touchmove", (ev) => {
-        ev.preventDefault();
-        for (let i = 0; i < ev.touches.length; i++) {
-          if (ev.touches[i].identifier === activeSteerTouchId) {
-            updateBtnTouchState(ev.touches[i].clientX, ev.touches[i].clientY);
-            break;
-          }
-        }
-      }, { passive: false });
-
-      steerBtnsContainer.addEventListener("touchend", (ev) => {
-        ev.preventDefault();
-        for (let i = 0; i < ev.changedTouches.length; i++) {
-          if (ev.changedTouches[i].identifier === activeSteerTouchId) {
-            clearBtnSteer();
-            break;
-          }
-        }
-      }, { passive: false });
-
-      steerBtnsContainer.addEventListener("touchcancel", (ev) => {
-        ev.preventDefault();
-        clearBtnSteer();
-      }, { passive: false });
-
-      // Soporte para clicks con ratón en pruebas de escritorio
-      bindHoldButton("steer-left-btn", () => { input.left = 1; }, () => { input.left = 0; });
-      bindHoldButton("steer-right-btn", () => { input.right = 1; }, () => { input.right = 0; });
-    }
-
     // ==================== JOYSTICK CON ESFERA TÁCTIL PARA GIRAR A IZQUIERDA O DERECHA ====================
     const joyBase = document.getElementById("steer-joystick-base");
     const joySphere = document.getElementById("steer-joystick-sphere");
@@ -2172,17 +2085,9 @@
       });
     }
 
-    // Modo de Control en móvil (Botones vs Joystick vs Acelerómetro)
+    // Modo de Control en móvil (Joystick vs Acelerómetro)
     const btnAccel = document.getElementById("btn-control-accel");
     const btnJoy = document.getElementById("btn-control-joystick");
-    const btnButtons = document.getElementById("btn-control-buttons");
-    if (btnButtons) {
-      btnButtons.addEventListener("click", () => {
-        appSettings.controlMode = "BUTTONS";
-        updateControlModeUI();
-        saveSettings();
-      });
-    }
     if (btnJoy) {
       btnJoy.addEventListener("click", () => {
         appSettings.controlMode = "JOYSTICK";
