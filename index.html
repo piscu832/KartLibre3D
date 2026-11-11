@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
   <title>KartLibre 3D • Kartódromo Ciudad de Buenos Aires</title>
-  <link rel="stylesheet" href="src/styles.css?v=21" />
+  <link rel="stylesheet" href="src/styles.css?v=22" />
 </head>
 <body>
   <!-- Escena 3D WebGL (Three.js) -->
@@ -50,7 +50,7 @@
       </div>
       <p class="menu-subtitle">
         Elige tu piloto de la lista oficial. Formato de Gran Premio completo contra los otros 7 corredores:
-        <strong>1 Vuelta de Reconocimiento</strong>, <strong>3 Vueltas de Clasificación</strong> (ordena la grilla) y <strong id="menu-laps-span">30 Vueltas de Carrera Final</strong>.
+        <strong>1 Vuelta de Reconocimiento</strong>, <strong>3 Vueltas de Clasificación</strong> (ordena la grilla) y <strong id="menu-laps-span">20 Vueltas de Carrera Final</strong>.
       </p>
 
       <!-- Modalidad Opcional Multijugador Online (Hasta 8 Usuarios sincronizados sin repetir corredor) -->
@@ -106,7 +106,7 @@
         <div class="format-steps">
           <span class="format-pill">1° Reconocimiento (1V)</span>
           <span class="format-pill">2° Clasificación (3V)</span>
-          <span class="format-pill" id="format-pill-race">3° Carrera (30V)</span>
+          <span class="format-pill" id="format-pill-race">3° Carrera (20V)</span>
         </div>
       </div>
 
@@ -362,21 +362,21 @@
         <div class="settings-group">
           <div class="settings-group-header">
             <span class="settings-label">🏁 Vueltas de la Carrera Final</span>
-            <span id="setting-laps-display" class="settings-badge-val">30 Vueltas</span>
+            <span id="setting-laps-display" class="settings-badge-val">20 Vueltas</span>
           </div>
           <div class="settings-stepper-row">
             <button id="btn-laps-minus" class="stepper-btn" title="Restar 1 vuelta">-</button>
-            <input id="setting-race-laps" type="number" min="1" max="100" value="30" class="stepper-input" />
+            <input id="setting-race-laps" type="number" min="1" max="100" value="20" class="stepper-input" />
             <button id="btn-laps-plus" class="stepper-btn" title="Sumar 1 vuelta">+</button>
             <div class="pill-group laps-preset-pills">
-              <button class="option-pill laps-pill" data-laps="3">3V</button>
               <button class="option-pill laps-pill" data-laps="5">5V</button>
               <button class="option-pill laps-pill" data-laps="10">10V</button>
               <button class="option-pill laps-pill" data-laps="15">15V</button>
-              <button class="option-pill laps-pill active" data-laps="30">30V</button>
+              <button class="option-pill laps-pill active" data-laps="20">20V</button>
+              <button class="option-pill laps-pill" data-laps="30">30V</button>
             </div>
           </div>
-          <div class="settings-hint">Cambia las 30 vueltas a cualquier valor deseado entre 1 y 100 vueltas.</div>
+          <div class="settings-hint">Cambia las 20 vueltas a cualquier valor deseado entre 1 y 100 vueltas.</div>
         </div>
       </div>
 
@@ -428,14 +428,14 @@
   </div>
 
   <!-- Scripts del Juego (cargados exclusivamente desde origen local bajo CSP estricto) -->
-  <script src="src/three.min.js?v=21"></script>
-  <script src="src/peerjs.min.js?v=21"></script>
-  <script src="src/kartModelData.js?v=21"></script>
-  <script src="src/racersData.js?v=21"></script>
-  <script src="src/kartFactory.js?v=21"></script>
-  <script src="src/trackBuilder.js?v=21"></script>
-  <script src="src/weatherAndAudio.js?v=21"></script>
-  <script src="src/networkManager.js?v=21"></script>
-  <script src="src/gameEngine.js?v=21"></script>
+  <script src="src/three.min.js?v=22"></script>
+  <script src="src/peerjs.min.js?v=22"></script>
+  <script src="src/kartModelData.js?v=22"></script>
+  <script src="src/racersData.js?v=22"></script>
+  <script src="src/kartFactory.js?v=22"></script>
+  <script src="src/trackBuilder.js?v=22"></script>
+  <script src="src/weatherAndAudio.js?v=22"></script>
+  <script src="src/networkManager.js?v=22"></script>
+  <script src="src/gameEngine.js?v=22"></script>
 </body>
 </html>

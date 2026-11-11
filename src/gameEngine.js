@@ -27,9 +27,9 @@
     RACE: {
       id: "RACE",
       stepNumber: 3,
-      title: "ETAPA 3/3 • CARRERA FINAL (30 VUELTAS)",
-      shortTitle: "Carrera Final (30 Vueltas)",
-      laps: 30,
+      title: "ETAPA 3/3 • CARRERA FINAL (20 VUELTAS)",
+      shortTitle: "Carrera Final (20 Vueltas)",
+      laps: 20,
       nextStage: null
     }
   };
@@ -139,7 +139,7 @@
     audioEnabled: true,           // true o false
     difficulty: "MEDIUM",         // "EASY" | "MEDIUM" | "HARD"
     rainMode: true,               // true (lluvia) | false (seco)
-    raceLaps: 30                  // Vueltas para la Carrera Final (1 a 100, default 30)
+    raceLaps: 20                  // Vueltas para la Carrera Final (1 a 100, default 20)
   };
 
   function loadSavedSettings() {
@@ -185,7 +185,7 @@
   }
 
   function applyRaceLaps(laps) {
-    const num = Math.max(1, Math.min(100, parseInt(laps, 10) || 30));
+    const num = Math.max(1, Math.min(100, parseInt(laps, 10) || 20));
     appSettings.raceLaps = num;
     STAGE_CONFIG.RACE.laps = num;
     STAGE_CONFIG.RACE.title = `ETAPA 3/3 • CARRERA FINAL (${num} VUELTAS)`;
@@ -1074,7 +1074,7 @@
       }
       if (subtitle) {
         subtitle.textContent =
-          "Los 8 corredores han sido ordenados por su mejor tiempo de clasificación para largar la Carrera Final de 30 Vueltas:";
+          `Los 8 corredores han sido ordenados por su mejor tiempo de clasificación para largar la Carrera Final de ${STAGE_CONFIG.RACE.laps} Vueltas:`;
       }
       if (colTimeHeader) colTimeHeader.textContent = "Mejor Vuelta (Dif.)";
 
@@ -1095,16 +1095,16 @@
 
       if (btnNextStage) {
         btnNextStage.classList.remove("hidden");
-        btnNextStage.textContent = "🏁 LARGAR CARRERA FINAL (30 VUELTAS) ▶";
+        btnNextStage.textContent = `🏁 LARGAR CARRERA FINAL (${STAGE_CONFIG.RACE.laps} VUELTAS) ▶`;
       }
       if (modal) modal.classList.remove("hidden");
     } else {
-      // Final de la Carrera de 30 Vueltas
+      // Final de la Carrera Final
       gameState = "FINISHED";
       const sorted = getSortedStandings();
       const playerRank = sorted.indexOf(playerKart) + 1;
 
-      if (badgeEl) badgeEl.textContent = "Etapa 3/3 Completada • Carrera Final (30 Vueltas)";
+      if (badgeEl) badgeEl.textContent = `Etapa 3/3 Completada • Carrera Final (${STAGE_CONFIG.RACE.laps} Vueltas)`;
       if (title) {
         title.textContent =
           playerRank === 1
@@ -1112,7 +1112,7 @@
             : `🏁 ¡CARRERA FINALIZADA! PUESTO ${playerRank}°`;
       }
       if (subtitle) {
-        subtitle.textContent = "Resultado oficial tras las 30 vueltas al Kartódromo Ciudad de Buenos Aires:";
+        subtitle.textContent = `Resultado oficial tras las ${STAGE_CONFIG.RACE.laps} vueltas al Kartódromo Ciudad de Buenos Aires:`;
       }
       if (colTimeHeader) colTimeHeader.textContent = "Tiempo Total";
 
