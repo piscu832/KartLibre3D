@@ -61,9 +61,23 @@
         const x = positions[i * 3 + 0];
         const y = positions[i * 3 + 1];
         const z = positions[i * 3 + 2];
-        if (uvMode === "nassau" || uvMode === "spoiler") {
-          uvs[i * 2 + 0] = (x - minX) / spanX;
-          uvs[i * 2 + 1] = (z - minZ) / spanZ;
+        if (uvMode === "nassau") {
+          // Visto de frente (+Z mirando hacia -Z): izquierda del observador es +X, derecha es -X
+          // Parte superior (cerca del volante) es menor Z (Y alto), inferior es mayor Z (Y bajo)
+          uvs[i * 2 + 0] = (maxX - x) / spanX;
+          uvs[i * 2 + 1] = (maxZ - z) / spanZ;
+        } else if (uvMode === "spoiler") {
+          uvs[i * 2 + 0] = (maxX - x) / spanX;
+          uvs[i * 2 + 1] = (maxZ - z) / spanZ;
+        } else if (uvMode === "sidepod_left") {
+          // Pontón izquierdo (Object017, X < 0): Mirando desde la izquierda, -Z (cola) es la izq, +Z (frente) es la der
+          uvs[i * 2 + 0] = (z - minZ) / spanZ;
+          uvs[i * 2 + 1] = (y - minY) / spanY;
+        } else if (uvMode === "sidepod_right") {
+          // Pontón derecho (Object018, X > 0): Mirando desde la derecha, +Z (frente) es la izq, -Z (cola) es la der
+          // Invertir Z para que U aumente de izquierda a derecha del observador y el número no quede espejado
+          uvs[i * 2 + 0] = (maxZ - z) / spanZ;
+          uvs[i * 2 + 1] = (y - minY) / spanY;
         } else if (uvMode === "sidepod") {
           uvs[i * 2 + 0] = (z - minZ) / spanZ;
           uvs[i * 2 + 1] = (y - minY) / spanY;
@@ -96,14 +110,15 @@
     ctx.fillRect(38, 0, 12, 512);
     ctx.fillRect(512 - 50, 0, 12, 512);
 
+    // Escudo blanco frontal para el dorsal de carrera
     ctx.save();
-    ctx.translate(256, 155);
+    ctx.translate(256, 210);
     ctx.beginPath();
-    ctx.moveTo(-78, -68);
-    ctx.lineTo(78, -68);
-    ctx.quadraticCurveTo(92, 0, 68, 72);
-    ctx.lineTo(-68, 72);
-    ctx.quadraticCurveTo(-92, 0, -78, -68);
+    ctx.moveTo(-78, -70);
+    ctx.lineTo(78, -70);
+    ctx.quadraticCurveTo(92, 10, 68, 78);
+    ctx.lineTo(-68, 78);
+    ctx.quadraticCurveTo(-92, 10, -78, -70);
     ctx.closePath();
 
     ctx.fillStyle = "#F7F9FC";
@@ -112,7 +127,7 @@
     ctx.strokeStyle = "#181B20";
     ctx.stroke();
 
-    ctx.scale(-1, -1);
+    // Dorsal frontal sin invertir (legible de frente)
     ctx.fillStyle = "#14171C";
     ctx.font = "italic 900 96px 'Segoe UI', Impact, Arial, sans-serif";
     ctx.textAlign = "center";
@@ -165,8 +180,8 @@
     return tex;
   }
 
-  // Genera textura para los pontones laterales
-  function createSidePodTexture(racer) {
+  // Genera textura para los pontones laterales (izquierdo y derecho adaptados para leerse siempre al derecho)
+  function createSidePodTexture(racer, isRightSide) {
     const canvas = document.createElement("canvas");
     canvas.width = 512;
     canvas.height = 256;
@@ -175,32 +190,71 @@
     ctx.fillStyle = racer.primaryColor;
     ctx.fillRect(0, 0, 512, 256);
 
-    ctx.fillStyle = racer.secondaryColor;
-    ctx.beginPath();
-    ctx.moveTo(310, 0); ctx.lineTo(410, 0); ctx.lineTo(340, 256); ctx.lineTo(240, 256);
-    ctx.closePath();
-    ctx.fill();
+    if (isRightSide) {
+      // Pontón Derecho (Object018, visto desde la derecha del kart: izquierda es el frente, derecha es la cola)
+      // La placa numérica va hacia la cola (derecha del canvas, U=1 / X~362)
+      // Franjas decorativas hacia el frente (izquierda del canvas, X~100-240)
+      ctx.fillStyle = racer.secondaryColor;
+      ctx.beginPath();
+      ctx.moveTo(202, 0); ctx.lineTo(102, 0); ctx.lineTo(172, 256); ctx.lineTo(272, 256);
+      ctx.closePath();
+      ctx.fill();
 
-    ctx.fillStyle = racer.stripeColor;
-    ctx.beginPath();
-    ctx.moveTo(275, 0); ctx.lineTo(310, 0); ctx.lineTo(240, 256); ctx.lineTo(205, 256);
-    ctx.closePath();
-    ctx.fill();
+      ctx.fillStyle = racer.stripeColor;
+      ctx.beginPath();
+      ctx.moveTo(237, 0); ctx.lineTo(202, 0); ctx.lineTo(272, 256); ctx.lineTo(307, 256);
+      ctx.closePath();
+      ctx.fill();
 
-    ctx.fillStyle = "#F8FAFC";
-    ctx.strokeStyle = "#14171A";
-    ctx.lineWidth = 8;
-    ctx.fillRect(42, 48, 108, 136);
-    ctx.strokeRect(42, 48, 108, 136);
+      // Placa blanca con borde oscuro para el dorsal (hacia la parte trasera del pontón)
+      ctx.fillStyle = "#F8FAFC";
+      ctx.strokeStyle = "#14171A";
+      ctx.lineWidth = 8;
+      ctx.fillRect(362, 48, 108, 136);
+      ctx.strokeRect(362, 48, 108, 136);
 
-    ctx.save();
-    ctx.translate(96, 116);
-    ctx.fillStyle = "#14171A";
-    ctx.font = "italic 900 84px 'Segoe UI', Impact, Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(String(racer.number), 0, 0);
-    ctx.restore();
+      // Número de corredor legible de izquierda a derecha (sin invertir)
+      ctx.save();
+      ctx.translate(416, 116);
+      ctx.fillStyle = "#14171A";
+      ctx.font = "italic 900 84px 'Segoe UI', Impact, Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(racer.number), 0, 0);
+      ctx.restore();
+    } else {
+      // Pontón Izquierdo (Object017, visto desde la izquierda del kart: izquierda es la cola, derecha es el frente)
+      // La placa numérica va hacia la cola (izquierda del canvas, U=0 / X~42)
+      // Franjas decorativas hacia el frente (derecha del canvas, X~240-410)
+      ctx.fillStyle = racer.secondaryColor;
+      ctx.beginPath();
+      ctx.moveTo(310, 0); ctx.lineTo(410, 0); ctx.lineTo(340, 256); ctx.lineTo(240, 256);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = racer.stripeColor;
+      ctx.beginPath();
+      ctx.moveTo(275, 0); ctx.lineTo(310, 0); ctx.lineTo(240, 256); ctx.lineTo(205, 256);
+      ctx.closePath();
+      ctx.fill();
+
+      // Placa blanca con borde oscuro para el dorsal (hacia la parte trasera del pontón)
+      ctx.fillStyle = "#F8FAFC";
+      ctx.strokeStyle = "#14171A";
+      ctx.lineWidth = 8;
+      ctx.fillRect(42, 48, 108, 136);
+      ctx.strokeRect(42, 48, 108, 136);
+
+      // Número de corredor legible de izquierda a derecha
+      ctx.save();
+      ctx.translate(96, 116);
+      ctx.fillStyle = "#14171A";
+      ctx.font = "italic 900 84px 'Segoe UI', Impact, Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(racer.number), 0, 0);
+      ctx.restore();
+    }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.anisotropy = 4;
@@ -769,7 +823,8 @@
 
     const nassauTex = createNassauTexture(racer);
     const spoilerTex = createSpoilerTexture(racer);
-    const sidePodTex = createSidePodTexture(racer);
+    const sidePodTexLeft = createSidePodTexture(racer, false);
+    const sidePodTexRight = createSidePodTexture(racer, true);
 
     const matNassau = new THREE.MeshStandardMaterial({
       map: nassauTex,
@@ -783,8 +838,14 @@
       metalness: 0.12,
       side: THREE.DoubleSide
     });
-    const matSidePod = new THREE.MeshStandardMaterial({
-      map: sidePodTex,
+    const matSidePodLeft = new THREE.MeshStandardMaterial({
+      map: sidePodTexLeft,
+      roughness: 0.28,
+      metalness: 0.12,
+      side: THREE.DoubleSide
+    });
+    const matSidePodRight = new THREE.MeshStandardMaterial({
+      map: sidePodTexRight,
       roughness: 0.28,
       metalness: 0.12,
       side: THREE.DoubleSide
@@ -868,8 +929,8 @@
 
     addStaticPart("NassauPanel", matNassau, "nassau");
     addStaticPart("FrontSpoiler", matSpoiler, "spoiler");
-    addStaticPart("Object017", matSidePod, "sidepod");
-    addStaticPart("Object018", matSidePod, "sidepod");
+    addStaticPart("Object017", matSidePodLeft, "sidepod_left");
+    addStaticPart("Object018", matSidePodRight, "sidepod_right");
     addStaticPart("Object015", matPrimaryBody);
     addStaticPart("Object001", matPrimaryBody);
     addStaticPart("Object002", matSecondaryAccent);
