@@ -1,25 +1,26 @@
 // Service Worker oficial de KartLibre 3D para instalación PWA en Android y soporte Offline
-const CACHE_NAME = "kartlibre3d-pwa-v23";
+const CACHE_NAME = "kartlibre3d-pwa-v24";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./src/styles.css?v=23",
-  "./src/three.min.js?v=23",
-  "./src/peerjs.min.js?v=23",
-  "./src/kartModelData.js?v=23",
-  "./src/racersData.js?v=23",
-  "./src/kartFactory.js?v=23",
-  "./src/trackBuilder.js?v=23",
-  "./src/weatherAndAudio.js?v=23",
-  "./src/networkManager.js?v=23",
-  "./src/gameEngine.js?v=23",
+  "./src/styles.css?v=24",
+  "./src/three.min.js?v=24",
+  "./src/peerjs.min.js?v=24",
+  "./src/kartModelData.js?v=24",
+  "./src/racersData.js?v=24",
+  "./src/kartFactory.js?v=24",
+  "./src/trackBuilder.js?v=24",
+  "./src/weatherAndAudio.js?v=24",
+  "./src/networkManager.js?v=24",
+  "./src/gameEngine.js?v=24",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
   "./assets/apple-touch-icon.png",
   "./assets/favicon.png",
   "./assets/logo-kartlibre.jpg",
-  "./Pistas/Kartódromo-V1.jpeg"
+  "./Pistas/Kartódromo-V1.jpeg",
+  "./Pistas/Kartódromo-V2.jpeg"
 ];
 
 self.addEventListener("install", (event) => {

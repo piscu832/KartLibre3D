@@ -139,7 +139,8 @@
     audioEnabled: true,           // true o false
     difficulty: "MEDIUM",         // "EASY" | "MEDIUM" | "HARD"
     rainMode: true,               // true (lluvia) | false (seco)
-    raceLaps: 20                  // Vueltas para la Carrera Final (1 a 100, default 20)
+    raceLaps: 20,                 // Vueltas para la Carrera Final (1 a 100, default 20)
+    trackId: "V1"                 // "V1" (Kartódromo Bs. As.) | "V2" (Llantas Blancas)
   };
 
   function loadSavedSettings() {
@@ -169,6 +170,9 @@
         }
         if (typeof parsed.raceLaps === "number" && parsed.raceLaps >= 1 && parsed.raceLaps <= 100) {
           appSettings.raceLaps = Math.round(parsed.raceLaps);
+        }
+        if (parsed.trackId === "V1" || parsed.trackId === "V2") {
+          appSettings.trackId = parsed.trackId;
         }
       }
     } catch (e) {
@@ -288,6 +292,49 @@
 
     // 7. Vueltas carrera final
     applyRaceLaps(appSettings.raceLaps);
+
+    // 8. Trazado de pista activo (V1 vs V2)
+    applyTrackUI();
+  }
+
+  function applyTrackUI() {
+    const curTrackId = appSettings.trackId || "V1";
+    const trackDef = (window.TRACKS_CATALOG && window.TRACKS_CATALOG[curTrackId]) || (window.TRACKS_CATALOG && window.TRACKS_CATALOG.V1);
+    if (!trackDef) return;
+
+    document.querySelectorAll(".track-pill, .setting-track-pill").forEach((p) => {
+      p.classList.toggle("active", p.getAttribute("data-track") === curTrackId);
+    });
+
+    const menuLabel = document.getElementById("menu-track-title");
+    if (menuLabel) {
+      menuLabel.textContent = `Circuito: ${trackDef.name} (${trackDef.cornerCount} Curvas)`;
+    }
+
+    const img = document.getElementById("menu-track-img");
+    if (img && trackDef.image) {
+      img.src = trackDef.image;
+      img.alt = trackDef.name;
+    }
+
+    const desc = document.getElementById("menu-track-desc");
+    if (desc && trackDef.description) {
+      desc.textContent = trackDef.description;
+    }
+  }
+
+  function switchTrack(trackId) {
+    trackId = (trackId === "V2") ? "V2" : "V1";
+    appSettings.trackId = trackId;
+    saveSettings();
+
+    if (track && track.trackGroup) {
+      scene.remove(track.trackGroup);
+    }
+    track = window.buildKartodromoTrack(scene, isRainMode, trackId);
+    currentGridOrder = (currentGridOrder && currentGridOrder.length === 8) ? currentGridOrder : window.RACERS_LIST.slice();
+    spawnGrid(currentGridOrder);
+    applyTrackUI();
   }
 
   // ==================== CONTROL POR ACELERÓMETRO EN DISPOSITIVOS MÓVILES ====================
@@ -822,13 +869,22 @@
       k.position.z += (fwdZ * k.speed + rightZ * k.lateralVel) * dt;
       k.position.y = onKerb ? Math.sin(raceTime * 48) * 0.016 : 0;
 
-      const maxOffTrack = track.trackHalfWidth + 3.0;
+      const maxOffTrack = track.hasWhiteTireWalls ? (track.trackHalfWidth + 0.95) : (track.trackHalfWidth + 3.0);
       if (Math.abs(trackInfo.lateralOffset) > maxOffTrack) {
         const sign = Math.sign(trackInfo.lateralOffset);
         const clampedPt = trackInfo.sample.pt.clone().addScaledVector(trackInfo.sample.right, sign * maxOffTrack);
-        k.position.x = THREE.MathUtils.lerp(k.position.x, clampedPt.x, 0.35);
-        k.position.z = THREE.MathUtils.lerp(k.position.z, clampedPt.z, 0.35);
-        k.speed *= 0.94;
+        k.position.x = THREE.MathUtils.lerp(k.position.x, clampedPt.x, 0.45);
+        k.position.z = THREE.MathUtils.lerp(k.position.z, clampedPt.z, 0.45);
+        if (track.hasWhiteTireWalls) {
+          // Amortiguación y rebote contra las pilas de 3 llantas blancas
+          k.speed *= 0.75;
+          k.lateralVel *= 0.3;
+          if (audio && k.isPlayer && Math.abs(k.speed) > 4) {
+            audio.playTireScreech();
+          }
+        } else {
+          k.speed *= 0.94;
+        }
       }
     }
 
@@ -1112,7 +1168,8 @@
             : `🏁 ¡CARRERA FINALIZADA! PUESTO ${playerRank}°`;
       }
       if (subtitle) {
-        subtitle.textContent = `Resultado oficial tras las ${STAGE_CONFIG.RACE.laps} vueltas al Kartódromo Ciudad de Buenos Aires:`;
+        const tName = (track && track.trackDef) ? track.trackDef.name : "Kartódromo";
+        subtitle.textContent = `Resultado oficial tras las ${STAGE_CONFIG.RACE.laps} vueltas al ${tName}:`;
       }
       if (colTimeHeader) colTimeHeader.textContent = "Tiempo Total";
 
@@ -1219,15 +1276,19 @@
 
     ctx.clearRect(0, 0, W, H);
 
-    const sx = W / 1600;
-    const sy = H / 1037;
+    const activeTrackDef = (track && track.trackDef) || (window.TRACKS_CATALOG && window.TRACKS_CATALOG[appSettings.trackId]) || (window.TRACKS_CATALOG && window.TRACKS_CATALOG.V1);
+    const imgW = activeTrackDef ? activeTrackDef.imgWidth : 1600;
+    const imgH = activeTrackDef ? activeTrackDef.imgHeight : 1037;
+    const sx = W / imgW;
+    const sy = H / imgH;
 
     ctx.save();
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
+    const pts = (activeTrackDef && activeTrackDef.pixelPoints) || window.TRACK_PIXEL_POINTS;
     ctx.beginPath();
-    window.TRACK_PIXEL_POINTS.forEach((p, idx) => {
+    pts.forEach((p, idx) => {
       if (idx === 0) ctx.moveTo(p.px * sx, p.py * sy);
       else ctx.lineTo(p.px * sx, p.py * sy);
     });
@@ -1241,15 +1302,19 @@
     ctx.lineWidth = 6;
     ctx.stroke();
 
-    const sp = window.TRACK_PIXEL_POINTS[1];
-    ctx.fillStyle = "#EF4444";
-    ctx.fillRect(sp.px * sx - 2, sp.py * sy - 7, 5, 14);
+    // Línea de Largada / Meta en el minimapa
+    const sp = pts.find((p) => p.isStartLine) || pts[1] || pts[0];
+    if (sp) {
+      ctx.fillStyle = "#EF4444";
+      ctx.fillRect(sp.px * sx - 3, sp.py * sy - 6, 6, 12);
+    }
 
     ctx.fillStyle = "#94A3B8";
     ctx.font = "bold 9px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    window.TRACK_CORNER_LABELS.forEach((cl) => {
+    const clist = (activeTrackDef && activeTrackDef.cornerLabels) || window.TRACK_CORNER_LABELS;
+    clist.forEach((cl) => {
       ctx.fillText(String(cl.num), cl.px * sx, cl.py * sy);
     });
 
@@ -1899,6 +1964,13 @@
       });
     });
 
+    document.querySelectorAll(".track-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        const tId = pill.getAttribute("data-track");
+        switchTrack(tId);
+      });
+    });
+
     document.querySelectorAll(".diff-pill").forEach((pill) => {
       pill.addEventListener("click", () => {
         const diffId = pill.getAttribute("data-diff");
@@ -2185,6 +2257,14 @@
       });
     });
 
+    // Circuito / Trazado de Carrera en Settings
+    document.querySelectorAll(".setting-track-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        const tId = pill.getAttribute("data-track");
+        switchTrack(tId);
+      });
+    });
+
     // Vueltas en Settings (Stepper + Presets)
     const btnMinus = document.getElementById("btn-laps-minus");
     const btnPlus = document.getElementById("btn-laps-plus");
@@ -2306,7 +2386,7 @@
     sunLight.shadow.bias = -0.0006;
     scene.add(sunLight);
 
-    track = window.buildKartodromoTrack(scene, isRainMode);
+    track = window.buildKartodromoTrack(scene, isRainMode, appSettings.trackId);
     weather = window.createWeatherSystem(scene, visorCanvas);
     audio = window.createKartAudio();
     setupSkyAndLights(isRainMode);

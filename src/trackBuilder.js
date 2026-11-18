@@ -1,26 +1,9 @@
-// Generador 3D del Circuito "Kartódromo Ciudad de Buenos Aires" (basado en Pistas/Kartódromo-V1.jpeg)
-// Incluye el edificio de boxes y torre de control de la Imagen 1 + barreras de neumáticos y tribunas de la Imagen 2.
+// Generador 3D de Circuitos (Kartódromo V1 y Kartódromo V2 con llantas blancas)
+// Soporta V1 (Buenos Aires con Boxes y Torre) y V2 (Internacional rodeado de llantas blancas de 3 de alto)
 
 (function () {
-  const PIXEL_SCALE = 0.34;
-  const CENTER_PX = 800;
-  const CENTER_PY = 520;
+  const DEFAULT_PIXEL_SCALE = 0.34;
   const TRACK_HALF_WIDTH = 6.8; // 13.6m de ancho total para permitir sobrepasos entre los 8 karts
-
-  function pixelToWorld(px, py) {
-    return new THREE.Vector3(
-      (px - CENTER_PX) * PIXEL_SCALE,
-      0,
-      (py - CENTER_PY) * PIXEL_SCALE
-    );
-  }
-
-  function worldToPixel(x, z) {
-    return {
-      px: x / PIXEL_SCALE + CENTER_PX,
-      py: z / PIXEL_SCALE + CENTER_PY
-    };
-  }
 
   // Textura de asfalto con líneas blancas laterales, huella húmeda y reflejo especular
   function createAsphaltTexture(isRain) {
@@ -121,12 +104,76 @@
     return group;
   }
 
-  window.buildKartodromoTrack = function (scene, isRain) {
+  // Geometría 3D de una pila de 3 llantas de contención blancas
+  function createTripleTireStackGeometry() {
+    const pts = [];
+    const innerR = 0.20;
+    const tireR = 0.44;
+    const grooveR = 0.38;
+    const tireH = 0.25;
+
+    // Base inferior
+    pts.push(new THREE.Vector2(innerR, 0.01));
+    pts.push(new THREE.Vector2(tireR * 0.90, 0.02));
+
+    for (let t = 0; t < 3; t++) {
+      const baseY = t * tireH + 0.02;
+      pts.push(new THREE.Vector2(tireR * 0.98, baseY + tireH * 0.20));
+      pts.push(new THREE.Vector2(tireR * 1.04, baseY + tireH * 0.50)); // perfil redondeado de la llanta
+      pts.push(new THREE.Vector2(tireR * 0.98, baseY + tireH * 0.80));
+      if (t < 2) {
+        pts.push(new THREE.Vector2(grooveR, baseY + tireH)); // separación visible entre llantas
+      }
+    }
+    // Tapa y hueco central
+    pts.push(new THREE.Vector2(tireR * 0.90, 3 * tireH + 0.02));
+    pts.push(new THREE.Vector2(innerR, 3 * tireH + 0.02));
+    pts.push(new THREE.Vector2(innerR, 0.01));
+
+    const geo = new THREE.LatheGeometry(pts, 12);
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  window.buildKartodromoTrack = function (scene, isRain, trackId) {
+    trackId = (trackId === "V2") ? "V2" : "V1";
+    const trackDef = (window.TRACKS_CATALOG && window.TRACKS_CATALOG[trackId]) || (window.TRACKS_CATALOG && window.TRACKS_CATALOG.V1) || {
+      id: "V1",
+      scale: 0.34,
+      centerX: 800,
+      centerY: 520,
+      pixelPoints: window.TRACK_PIXEL_POINTS,
+      cornerLabels: window.TRACK_CORNER_LABELS,
+      hasWhiteTireWalls: false,
+      startSampleIndex: 16
+    };
+
+    const PIXEL_SCALE = trackDef.scale || DEFAULT_PIXEL_SCALE;
+    const CENTER_PX = trackDef.centerX || 800;
+    const CENTER_PY = trackDef.centerY || (trackId === "V2" ? 450 : 520);
+    const pixelPoints = trackDef.pixelPoints || window.TRACK_PIXEL_POINTS;
+    const isV2 = (trackId === "V2");
+
+    function pixelToWorld(px, py) {
+      return new THREE.Vector3(
+        (px - CENTER_PX) * PIXEL_SCALE,
+        0,
+        (py - CENTER_PY) * PIXEL_SCALE
+      );
+    }
+
+    function worldToPixel(x, z) {
+      return {
+        px: x / PIXEL_SCALE + CENTER_PX,
+        py: z / PIXEL_SCALE + CENTER_PY
+      };
+    }
+
     const trackGroup = new THREE.Group();
     scene.add(trackGroup);
 
-    // 1. Construir curva cerrada CatmullRomCurve3 a partir de los puntos de Kartódromo-V1.jpeg
-    const rawPts = window.TRACK_PIXEL_POINTS.map((p) => pixelToWorld(p.px, p.py));
+    // 1. Construir curva cerrada CatmullRomCurve3 a partir de los puntos del trazado seleccionado
+    const rawPts = pixelPoints.map((p) => pixelToWorld(p.px, p.py));
     const spline = new THREE.CatmullRomCurve3(rawPts, true, "centripetal", 0.5);
 
     const SEGMENTS = 720;
@@ -140,13 +187,13 @@
       // Normal hacia la derecha en el plano XZ
       const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
 
-      // Interpolación de speedHint desde los puntos originales
-      const rawIdx = Math.floor(t * window.TRACK_PIXEL_POINTS.length) % window.TRACK_PIXEL_POINTS.length;
-      const nextRawIdx = (rawIdx + 1) % window.TRACK_PIXEL_POINTS.length;
-      const localFrac = (t * window.TRACK_PIXEL_POINTS.length) - Math.floor(t * window.TRACK_PIXEL_POINTS.length);
+      // Interpolación de speedHint desde los puntos originales del circuito activo
+      const rawIdx = Math.floor(t * pixelPoints.length) % pixelPoints.length;
+      const nextRawIdx = (rawIdx + 1) % pixelPoints.length;
+      const localFrac = (t * pixelPoints.length) - Math.floor(t * pixelPoints.length);
       const sh = THREE.MathUtils.lerp(
-        window.TRACK_PIXEL_POINTS[rawIdx].speedHint,
-        window.TRACK_PIXEL_POINTS[nextRawIdx].speedHint,
+        pixelPoints[rawIdx].speedHint || 1.0,
+        pixelPoints[nextRawIdx].speedHint || 1.0,
         localFrac
       );
 
@@ -326,12 +373,12 @@
     kerbMesh.receiveShadow = true;
     trackGroup.add(kerbMesh);
 
-    // 4. Línea de Largada/Llegada a cuadros y Cajones blancos de Grilla (exacto a Imagen 1)
-    const startSampleIndex = 16; // Recta Principal antes de Curva 1
+    // 4. Línea de Largada/Llegada a cuadros y Cajones blancos de Grilla
+    const startSampleIndex = typeof trackDef.startSampleIndex === "number" ? trackDef.startSampleIndex : (isV2 ? 0 : 16);
     const startSample = samples[startSampleIndex];
     const startAngleY = Math.atan2(startSample.tan.x, startSample.tan.z);
 
-    // Pórtico de largada con semáforos y cartel "KARTÓDROMO CIUDAD DE BUENOS AIRES"
+    // Pórtico de largada con semáforos y cartel del circuito
     const gantryGroup = new THREE.Group();
     gantryGroup.position.copy(startSample.pt);
     gantryGroup.rotation.y = startAngleY;
@@ -381,7 +428,7 @@
     bctx.font = "900 54px 'Segoe UI', Arial, sans-serif";
     bctx.textAlign = "center";
     bctx.textBaseline = "middle";
-    bctx.fillText("KARTÓDROMO CIUDAD DE BUENOS AIRES", 512, 66);
+    bctx.fillText(isV2 ? "KARTÓDROMO INTERNACIONAL • V2" : "KARTÓDROMO CIUDAD DE BUENOS AIRES", 512, 66);
     const bannerPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(TRACK_HALF_WIDTH * 1.85, 1.05),
       new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(bannerCanvas) })
@@ -501,31 +548,80 @@
     redBandBot.position.set(-0.6, 5.75, 0);
     towerGroup.add(redBandBot);
 
-    // 6. Barreras de Neumáticos Rojos y Blancos en las curvas + Conos Naranjas (Imagen 1 y 2)
-    const tireBarrierGeo = new THREE.CylinderGeometry(0.42, 0.42, 1.05, 10);
-    const redTireMat = new THREE.MeshStandardMaterial({ color: "#C62828", roughness: 0.7 });
-    const whiteTireMat = new THREE.MeshStandardMaterial({ color: "#ECEFF1", roughness: 0.7 });
-    const coneGeo = new THREE.ConeGeometry(0.24, 0.68, 10);
-    const coneMat = new THREE.MeshStandardMaterial({ color: "#FF6D00", roughness: 0.4 });
+    // 6. Barreras de Contención (Llantas Blancas de 3 de alto para V2, o Barreras clásicas para V1)
+    if (trackDef.hasWhiteTireWalls) {
+      // TRACK V2: RODEADA POR LLANTAS BLANCAS DE CONTENCIÓN (3 LLANTAS DE ALTO CADA PILA)
+      const tireGeo = createTripleTireStackGeometry();
+      const whiteTireMat = new THREE.MeshStandardMaterial({
+        color: "#F4F7FB",
+        roughness: 0.82,
+        metalness: 0.05
+      });
 
-    for (let i = 0; i < SEGMENTS; i += 6) {
-      const s = samples[i];
-      if (s.speedHint < 0.76) {
-        const isRed = (i % 12 === 0);
-        const barrierPos = s.pt.clone().addScaledVector(s.right, TRACK_HALF_WIDTH + 2.8);
-        const tireStack = new THREE.Mesh(tireBarrierGeo, isRed ? redTireMat : whiteTireMat);
-        tireStack.position.set(barrierPos.x, 0.52, barrierPos.z);
-        trackGroup.add(tireStack);
-      } else if (i % 36 === 0) {
-        const conePos = s.pt.clone().addScaledVector(s.right, -TRACK_HALF_WIDTH - 0.85);
-        const cone = new THREE.Mesh(coneGeo, coneMat);
-        cone.position.set(conePos.x, 0.34, conePos.z);
-        trackGroup.add(cone);
+      const stepDist = 0.94; // separación continua entre centros de pilas (~94cm)
+      const stackCountPerSide = Math.ceil(totalLength / stepDist);
+      const totalStacks = stackCountPerSide * 2;
+      const instancedTires = new THREE.InstancedMesh(tireGeo, whiteTireMat, totalStacks);
+      instancedTires.castShadow = true;
+      instancedTires.receiveShadow = true;
+
+      const dummy = new THREE.Object3D();
+      let idx = 0;
+      const barrierOffset = TRACK_HALF_WIDTH + 1.15; // 7.95m del centro (justo al borde del asfalto/pianitos)
+
+      for (let j = 0; j < stackCountPerSide; j++) {
+        const t = j / stackCountPerSide;
+        const pt = spline.getPointAt(t);
+        const tan = spline.getTangentAt(t).normalize();
+        const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+        const angleY = Math.atan2(tan.x, tan.z);
+
+        // Lado Izquierdo (-barrierOffset)
+        const leftPos = pt.clone().addScaledVector(right, -barrierOffset);
+        dummy.position.set(leftPos.x, 0, leftPos.z);
+        dummy.rotation.set(0, angleY + (Math.sin(j * 3.7) * 0.22), 0);
+        dummy.scale.set(1.0, 0.98 + (j % 3) * 0.02, 1.0);
+        dummy.updateMatrix();
+        instancedTires.setMatrixAt(idx++, dummy.matrix);
+
+        // Lado Derecho (+barrierOffset)
+        const rightPos = pt.clone().addScaledVector(right, barrierOffset);
+        dummy.position.set(rightPos.x, 0, rightPos.z);
+        dummy.rotation.set(0, angleY + (Math.cos(j * 4.1) * 0.22), 0);
+        dummy.scale.set(1.0, 0.98 + ((j + 1) % 3) * 0.02, 1.0);
+        dummy.updateMatrix();
+        instancedTires.setMatrixAt(idx++, dummy.matrix);
+      }
+      instancedTires.instanceMatrix.needsUpdate = true;
+      trackGroup.add(instancedTires);
+    } else {
+      // Circuito clásico V1: Barreras de neumáticos rojos y blancos en curvas + conos
+      const tireBarrierGeo = new THREE.CylinderGeometry(0.42, 0.42, 1.05, 10);
+      const redTireMat = new THREE.MeshStandardMaterial({ color: "#C62828", roughness: 0.7 });
+      const whiteTireMat = new THREE.MeshStandardMaterial({ color: "#ECEFF1", roughness: 0.7 });
+      const coneGeo = new THREE.ConeGeometry(0.24, 0.68, 10);
+      const coneMat = new THREE.MeshStandardMaterial({ color: "#FF6D00", roughness: 0.4 });
+
+      for (let i = 0; i < SEGMENTS; i += 6) {
+        const s = samples[i];
+        if (s.speedHint < 0.76) {
+          const isRed = (i % 12 === 0);
+          const barrierPos = s.pt.clone().addScaledVector(s.right, TRACK_HALF_WIDTH + 2.8);
+          const tireStack = new THREE.Mesh(tireBarrierGeo, isRed ? redTireMat : whiteTireMat);
+          tireStack.position.set(barrierPos.x, 0.52, barrierPos.z);
+          trackGroup.add(tireStack);
+        } else if (i % 36 === 0) {
+          const conePos = s.pt.clone().addScaledVector(s.right, -TRACK_HALF_WIDTH - 0.85);
+          const cone = new THREE.Mesh(coneGeo, coneMat);
+          cone.position.set(conePos.x, 0.34, conePos.z);
+          trackGroup.add(cone);
+        }
       }
     }
 
-    // 7. Carteles de las 10 Curvas en sus coordenadas de Kartódromo-V1.jpeg
-    window.TRACK_CORNER_LABELS.forEach((cl) => {
+    // 7. Carteles numerados de las curvas
+    const activeCornerLabels = trackDef.cornerLabels || window.TRACK_CORNER_LABELS;
+    activeCornerLabels.forEach((cl) => {
       const wPos = pixelToWorld(cl.px, cl.py);
       const sign = createCornerSign(cl.num);
       sign.position.copy(wPos);
@@ -690,6 +786,9 @@
     }
 
     return {
+      trackId,
+      trackDef,
+      hasWhiteTireWalls: Boolean(trackDef.hasWhiteTireWalls),
       trackGroup,
       spline,
       samples,
@@ -703,6 +802,7 @@
       getSampleAtT,
       findClosestTrackPoint,
       worldToPixel,
+      pixelToWorld,
       setWeatherMode
     };
   };
