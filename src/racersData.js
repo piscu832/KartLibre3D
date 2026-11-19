@@ -403,7 +403,7 @@ window.TRACKS_CATALOG = {
     centerY: 450,
     startSampleIndex: 0,
     cornerCount: 11,
-    description: "Circuito rápido y fluido rodeado de barreras de contención de llantas blancas (3 llantas de alto)."
+    description: "Circuito rápido y fluido con suelo de tierra removida, completamente rodeado por barreras de llantas blancas (3 llantas de alto)."
   }
 };
 

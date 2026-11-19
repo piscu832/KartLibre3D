@@ -350,8 +350,8 @@
     const carouselSubtitle = document.getElementById("menu-track-carousel-subtitle");
     if (carouselSubtitle) {
       carouselSubtitle.innerHTML = curTrackId === "V2"
-        ? `${trackDef.cornerCount} Curvas &bull; Llantas Blancas 3x &bull; 1.280 m`
-        : `${trackDef.cornerCount} Curvas &bull; Boxes & Torre &bull; 1.150 m`;
+        ? `${trackDef.cornerCount} Curvas &bull; Tierra Removida &bull; Llantas Blancas 3x`
+        : `${trackDef.cornerCount} Curvas &bull; Pasto Verde &bull; Boxes & Torre`;
     }
 
     const carouselBadge = document.getElementById("menu-track-carousel-badge");

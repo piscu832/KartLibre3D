@@ -47,7 +47,7 @@
     return tex;
   }
 
-  // Textura de pasto / césped húmedo
+  // Textura de pasto / césped húmedo (para Kartódromo V1)
   function createGrassTexture(isRain) {
     const canvas = document.createElement("canvas");
     canvas.width = 256;
@@ -67,6 +67,122 @@
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(90, 90);
+    return tex;
+  }
+
+  // Textura realista de tierra removida / arada (exclusiva para Kartódromo V2)
+  function createDirtTexture(isRain) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d");
+
+    // Color base terroso: seco marrón cálido / mojado oscuro embarrado
+    const baseColor = isRain ? "#382315" : "#623F23";
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // 1. Manchas orgánicas de humedad y gradiente de suelo desparejo
+    for (let i = 0; i < 35; i++) {
+      const rx = Math.random() * 512;
+      const ry = Math.random() * 512;
+      const rad = 40 + Math.random() * 90;
+      const grad = ctx.createRadialGradient(rx, ry, 5, rx, ry, rad);
+      if (isRain) {
+        grad.addColorStop(0, Math.random() > 0.5 ? "rgba(28, 16, 9, 0.45)" : "rgba(68, 42, 25, 0.35)");
+      } else {
+        grad.addColorStop(0, Math.random() > 0.5 ? "rgba(75, 46, 24, 0.45)" : "rgba(122, 82, 49, 0.38)");
+      }
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(rx, ry, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 2. Surcos ondulados de tierra arada / removida (rastras y huellas de máquina o arado)
+    const furrowCount = 48;
+    for (let f = 0; f < furrowCount; f++) {
+      const yBase = (f / furrowCount) * 512;
+      ctx.beginPath();
+      let x = 0;
+      let y = yBase + (Math.random() - 0.5) * 8;
+      ctx.moveTo(x, y);
+      while (x < 512) {
+        x += 20 + Math.random() * 25;
+        y = yBase + Math.sin(x * 0.035 + f * 0.4) * 5 + (Math.random() - 0.5) * 4;
+        ctx.lineTo(x, y);
+      }
+      // Sombra del surco (hendidura en la tierra)
+      ctx.lineWidth = 3.5 + Math.random() * 4.5;
+      ctx.strokeStyle = isRain ? "rgba(18, 10, 5, 0.42)" : "rgba(42, 25, 12, 0.38)";
+      ctx.stroke();
+
+      // Cresta iluminada del surco (tierra volcada hacia arriba)
+      ctx.beginPath();
+      x = 0;
+      ctx.moveTo(x, yBase - 2);
+      while (x < 512) {
+        x += 20 + Math.random() * 25;
+        y = yBase - 2 + Math.sin(x * 0.035 + f * 0.4) * 5 + (Math.random() - 0.5) * 3;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineWidth = 2 + Math.random() * 2.5;
+      ctx.strokeStyle = isRain ? "rgba(85, 54, 32, 0.28)" : "rgba(148, 103, 64, 0.32)";
+      ctx.stroke();
+    }
+
+    // 3. Terrones y grumos de tierra suelta levantada
+    const clodCount = 650;
+    for (let c = 0; c < clodCount; c++) {
+      const cx = Math.random() * 512;
+      const cy = Math.random() * 512;
+      const rw = 2 + Math.random() * 5;
+      const rh = 1.5 + Math.random() * 4;
+
+      // Sombra del terrón
+      ctx.fillStyle = isRain ? "rgba(12, 6, 3, 0.55)" : "rgba(28, 16, 7, 0.48)";
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 1.2, rw, rh * 0.9, Math.random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cuerpo del terrón
+      ctx.fillStyle = isRain
+        ? (Math.random() > 0.5 ? "#2C1A0E" : "#452A18")
+        : (Math.random() > 0.5 ? "#533319" : "#7D522F");
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rw * 0.9, rh * 0.8, Math.random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Brillo tenue en el borde superior del terrón
+      if (Math.random() > 0.4) {
+        ctx.fillStyle = isRain ? "rgba(95, 60, 36, 0.4)" : "rgba(165, 118, 75, 0.35)";
+        ctx.beginPath();
+        ctx.ellipse(cx - 0.5, cy - 0.7, rw * 0.5, rh * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 4. Granulado fino, arenilla y micropartículas de tierra suelta
+    const particleCount = 14000;
+    for (let p = 0; p < particleCount; p++) {
+      const px = Math.random() * 512;
+      const py = Math.random() * 512;
+      const rand = Math.random();
+      if (rand < 0.35) {
+        ctx.fillStyle = isRain ? "rgba(14, 7, 3, 0.5)" : "rgba(35, 20, 9, 0.42)";
+      } else if (rand < 0.7) {
+        ctx.fillStyle = isRain ? "rgba(72, 45, 26, 0.38)" : "rgba(118, 80, 48, 0.35)";
+      } else {
+        ctx.fillStyle = isRain ? "rgba(96, 62, 38, 0.3)" : "rgba(172, 126, 82, 0.38)";
+      }
+      ctx.fillRect(px, py, Math.random() > 0.7 ? 2 : 1, Math.random() > 0.7 ? 2 : 1);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(110, 110);
+    tex.anisotropy = 8;
     return tex;
   }
 
@@ -262,14 +378,14 @@
       samples[i].speedHint = Math.min(samples[i].speedHint, geomHint);
     }
 
-    // 2. Terreno de césped exterior e interior
-    const grassTex = createGrassTexture(isRain);
+    // 2. Terreno exterior e interior: Tierra removida en Pista V2 / Césped en Pista V1
+    const groundTex = isV2 ? createDirtTexture(isRain) : createGrassTexture(isRain);
     const groundMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(1400, 1400),
       new THREE.MeshStandardMaterial({
-        map: grassTex,
-        roughness: isRain ? 0.65 : 0.88,
-        metalness: 0.04
+        map: groundTex,
+        roughness: isRain ? (isV2 ? 0.72 : 0.65) : (isV2 ? 0.94 : 0.88),
+        metalness: isV2 ? 0.02 : 0.04
       })
     );
     groundMesh.rotation.x = -Math.PI / 2;
@@ -780,8 +896,8 @@
       roadMat.metalness = rainEnabled ? 0.38 : 0.08;
       roadMat.needsUpdate = true;
 
-      groundMesh.material.map = createGrassTexture(rainEnabled);
-      groundMesh.material.roughness = rainEnabled ? 0.65 : 0.88;
+      groundMesh.material.map = isV2 ? createDirtTexture(rainEnabled) : createGrassTexture(rainEnabled);
+      groundMesh.material.roughness = rainEnabled ? (isV2 ? 0.72 : 0.65) : (isV2 ? 0.94 : 0.88);
       groundMesh.material.needsUpdate = true;
     }
 
