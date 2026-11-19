@@ -186,13 +186,6 @@
     return tex;
   }
 
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(110, 110);
-    tex.anisotropy = 8;
-    return tex;
-  }
-
   // Cartel numerado de curva (1 al 10 como en Kartódromo-V1.jpeg)
   function createCornerSign(num) {
     const group = new THREE.Group();
