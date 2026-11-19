@@ -1735,4 +1735,213 @@ body, html {
   }
 }
 
+/* ==================== MENÚ Y SELECTOR DE PISTAS ==================== */
+.pill-mini-btn {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38BDF8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pill-mini-btn:hover {
+  background: rgba(56, 189, 248, 0.35);
+  color: #FFFFFF;
+}
+
+.track-card-deck {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.track-select-card {
+  background: rgba(15, 23, 42, 0.78);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  user-select: none;
+}
+
+.track-select-card:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(56, 189, 248, 0.55);
+  transform: translateY(-2px);
+}
+
+.track-select-card.active {
+  background: rgba(30, 58, 138, 0.55);
+  border-color: #38BDF8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+}
+
+.track-card-img-box {
+  width: 100%;
+  height: 92px;
+  background: #0B0F17;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.track-card-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
+
+.track-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.track-card-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #F8FAFC;
+}
+
+.track-card-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38BDF8;
+  white-space: nowrap;
+}
+
+.track-select-card.active .track-card-badge {
+  background: #38BDF8;
+  color: #0F172A;
+}
+
+.track-card-stats {
+  font-size: 11px;
+  color: #94A3B8;
+  line-height: 1.3;
+}
+
+/* Modal dedicado de pistas */
+.tracks-modal-card {
+  width: min(840px, 95vw);
+  max-height: 92vh;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+  z-index: 40;
+}
+
+.tracks-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.track-modal-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.track-modal-item:hover {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(56, 189, 248, 0.6);
+  transform: translateY(-2px);
+}
+
+.track-modal-item.active {
+  background: rgba(30, 58, 138, 0.45);
+  border-color: #38BDF8;
+  box-shadow: 0 0 22px rgba(56, 189, 248, 0.35);
+}
+
+.track-modal-preview {
+  width: 100%;
+  height: 170px;
+  background: #0B0F17;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.track-modal-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+}
+
+.track-specs-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.track-spec-row {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 4px;
+}
+
+.track-spec-label {
+  color: #94A3B8;
+}
+
+.track-spec-val {
+  color: #F8FAFC;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .track-card-deck {
+    grid-template-columns: 1fr;
+  }
+  .tracks-modal-grid {
+    grid-template-columns: 1fr;
+  }
+  .tracks-modal-card {
+    padding: 16px;
+  }
+  .track-modal-preview {
+    height: 130px;
+  }
+}
+
 

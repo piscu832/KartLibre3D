@@ -302,10 +302,36 @@
     const trackDef = (window.TRACKS_CATALOG && window.TRACKS_CATALOG[curTrackId]) || (window.TRACKS_CATALOG && window.TRACKS_CATALOG.V1);
     if (!trackDef) return;
 
+    // 1. Botones clásicos y pills de configuración
     document.querySelectorAll(".track-pill, .setting-track-pill").forEach((p) => {
       p.classList.toggle("active", p.getAttribute("data-track") === curTrackId);
     });
 
+    // 2. Tarjetas interactivas en el menú de inicio
+    document.querySelectorAll(".track-select-card").forEach((card) => {
+      card.classList.toggle("active", card.getAttribute("data-track") === curTrackId);
+    });
+
+    // 3. Elementos en el Modal dedicado de Pistas
+    document.querySelectorAll(".track-modal-item").forEach((item) => {
+      const isCur = item.getAttribute("data-track") === curTrackId;
+      item.classList.toggle("active", isCur);
+      const btn = item.querySelector(".btn-choose-track");
+      if (btn) {
+        if (isCur) {
+          btn.textContent = "✓ PISTA SELECCIONADA";
+          btn.style.background = "#059669";
+          btn.style.borderColor = "#10B981";
+        } else {
+          const tId = item.getAttribute("data-track");
+          btn.textContent = tId === "V2" ? "ELEGIR KARTÓDROMO V2" : "ELEGIR KARTÓDROMO V1";
+          btn.style.background = "";
+          btn.style.borderColor = "";
+        }
+      }
+    });
+
+    // 4. Encabezado y descripción del menú
     const menuLabel = document.getElementById("menu-track-title");
     if (menuLabel) {
       menuLabel.textContent = `Circuito: ${trackDef.name} (${trackDef.cornerCount} Curvas)`;
@@ -320,6 +346,16 @@
     const desc = document.getElementById("menu-track-desc");
     if (desc && trackDef.description) {
       desc.textContent = trackDef.description;
+    }
+
+    // 5. Etiqueta de circuito en modal de pausa y fin de carrera
+    const pauseInfo = document.getElementById("pause-stage-info");
+    if (pauseInfo) {
+      pauseInfo.textContent = `${trackDef.name} (${trackDef.cornerCount} Curvas • ${trackDef.hasWhiteTireWalls ? "Llantas Blancas 3x" : "Trazado Clásico"})`;
+    }
+    const finishBadge = document.getElementById("finish-stage-badge");
+    if (finishBadge) {
+      finishBadge.textContent = trackDef.name;
     }
   }
 
@@ -2302,6 +2338,64 @@
     });
   }
 
+  function setupTrackModalListeners() {
+    const modal = document.getElementById("tracks-modal");
+    const openBtns = [
+      document.getElementById("btn-tracks-menu"),
+      document.getElementById("btn-open-tracks-modal"),
+      document.getElementById("btn-tracks-pause")
+    ];
+    const closeBtn = document.getElementById("btn-close-tracks-modal");
+
+    openBtns.forEach((btn) => {
+      if (!btn) return;
+      btn.addEventListener("click", () => {
+        if (modal) modal.classList.remove("hidden");
+        applyTrackUI();
+      });
+    });
+
+    if (closeBtn && modal) {
+      closeBtn.addEventListener("click", () => {
+        modal.classList.add("hidden");
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.classList.add("hidden");
+        }
+      });
+    }
+
+    // Selección rápida desde las tarjetas del menú de inicio
+    document.querySelectorAll(".track-select-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const tId = card.getAttribute("data-track");
+        switchTrack(tId);
+      });
+    });
+
+    // Selección desde los paneles del modal de pistas
+    document.querySelectorAll(".track-modal-item").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        const tId = item.getAttribute("data-track");
+        switchTrack(tId);
+      });
+    });
+
+    // Botones explícitos de elección en el modal
+    document.querySelectorAll(".btn-choose-track").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const tId = btn.getAttribute("data-track");
+        switchTrack(tId);
+        if (modal) modal.classList.add("hidden");
+      });
+    });
+  }
+
   window.initKartRacerGame = function () {
     loadSavedSettings();
     isRainMode = appSettings.rainMode;
@@ -2513,6 +2607,7 @@
     spawnGrid(currentGridOrder);
     bindControls();
     setupSettingsModalListeners();
+    setupTrackModalListeners();
     applyAllSettings();
 
     try {
