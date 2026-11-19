@@ -77,21 +77,21 @@
     canvas.height = 512;
     const ctx = canvas.getContext("2d");
 
-    // Color base terroso: seco marrón cálido / mojado oscuro embarrado
-    const baseColor = isRain ? "#382315" : "#623F23";
+    // Color base terroso: marrón arcilla cálido en seco / chocolate oscuro húmedo en lluvia
+    const baseColor = isRain ? "#3E2616" : "#6E4527";
     ctx.fillStyle = baseColor;
     ctx.fillRect(0, 0, 512, 512);
 
     // 1. Manchas orgánicas de humedad y gradiente de suelo desparejo
-    for (let i = 0; i < 35; i++) {
+    for (let i = 0; i < 40; i++) {
       const rx = Math.random() * 512;
       const ry = Math.random() * 512;
-      const rad = 40 + Math.random() * 90;
+      const rad = 45 + Math.random() * 100;
       const grad = ctx.createRadialGradient(rx, ry, 5, rx, ry, rad);
       if (isRain) {
-        grad.addColorStop(0, Math.random() > 0.5 ? "rgba(28, 16, 9, 0.45)" : "rgba(68, 42, 25, 0.35)");
+        grad.addColorStop(0, Math.random() > 0.5 ? "rgba(25, 14, 8, 0.55)" : "rgba(75, 46, 27, 0.4)");
       } else {
-        grad.addColorStop(0, Math.random() > 0.5 ? "rgba(75, 46, 24, 0.45)" : "rgba(122, 82, 49, 0.38)");
+        grad.addColorStop(0, Math.random() > 0.5 ? "rgba(70, 40, 20, 0.52)" : "rgba(135, 88, 52, 0.45)");
       }
       grad.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = grad;
@@ -101,7 +101,7 @@
     }
 
     // 2. Surcos ondulados de tierra arada / removida (rastras y huellas de máquina o arado)
-    const furrowCount = 48;
+    const furrowCount = 52;
     for (let f = 0; f < furrowCount; f++) {
       const yBase = (f / furrowCount) * 512;
       ctx.beginPath();
@@ -114,70 +114,77 @@
         ctx.lineTo(x, y);
       }
       // Sombra del surco (hendidura en la tierra)
-      ctx.lineWidth = 3.5 + Math.random() * 4.5;
-      ctx.strokeStyle = isRain ? "rgba(18, 10, 5, 0.42)" : "rgba(42, 25, 12, 0.38)";
+      ctx.lineWidth = 4 + Math.random() * 5;
+      ctx.strokeStyle = isRain ? "rgba(15, 8, 4, 0.5)" : "rgba(38, 20, 9, 0.46)";
       ctx.stroke();
 
       // Cresta iluminada del surco (tierra volcada hacia arriba)
       ctx.beginPath();
       x = 0;
-      ctx.moveTo(x, yBase - 2);
+      ctx.moveTo(x, yBase - 2.5);
       while (x < 512) {
         x += 20 + Math.random() * 25;
-        y = yBase - 2 + Math.sin(x * 0.035 + f * 0.4) * 5 + (Math.random() - 0.5) * 3;
+        y = yBase - 2.5 + Math.sin(x * 0.035 + f * 0.4) * 5 + (Math.random() - 0.5) * 3;
         ctx.lineTo(x, y);
       }
-      ctx.lineWidth = 2 + Math.random() * 2.5;
-      ctx.strokeStyle = isRain ? "rgba(85, 54, 32, 0.28)" : "rgba(148, 103, 64, 0.32)";
+      ctx.lineWidth = 2.5 + Math.random() * 3;
+      ctx.strokeStyle = isRain ? "rgba(95, 58, 34, 0.35)" : "rgba(165, 112, 70, 0.42)";
       ctx.stroke();
     }
 
     // 3. Terrones y grumos de tierra suelta levantada
-    const clodCount = 650;
+    const clodCount = 750;
     for (let c = 0; c < clodCount; c++) {
       const cx = Math.random() * 512;
       const cy = Math.random() * 512;
-      const rw = 2 + Math.random() * 5;
-      const rh = 1.5 + Math.random() * 4;
+      const rw = 2.5 + Math.random() * 6;
+      const rh = 2 + Math.random() * 4.5;
 
       // Sombra del terrón
-      ctx.fillStyle = isRain ? "rgba(12, 6, 3, 0.55)" : "rgba(28, 16, 7, 0.48)";
+      ctx.fillStyle = isRain ? "rgba(10, 5, 2, 0.6)" : "rgba(25, 12, 5, 0.55)";
       ctx.beginPath();
-      ctx.ellipse(cx, cy + 1.2, rw, rh * 0.9, Math.random() * Math.PI, 0, Math.PI * 2);
+      ctx.ellipse(cx, cy + 1.4, rw, rh * 0.9, Math.random() * Math.PI, 0, Math.PI * 2);
       ctx.fill();
 
       // Cuerpo del terrón
       ctx.fillStyle = isRain
-        ? (Math.random() > 0.5 ? "#2C1A0E" : "#452A18")
-        : (Math.random() > 0.5 ? "#533319" : "#7D522F");
+        ? (Math.random() > 0.5 ? "#26150B" : "#422816")
+        : (Math.random() > 0.5 ? "#56341B" : "#8A5832");
       ctx.beginPath();
       ctx.ellipse(cx, cy, rw * 0.9, rh * 0.8, Math.random() * Math.PI, 0, Math.PI * 2);
       ctx.fill();
 
       // Brillo tenue en el borde superior del terrón
-      if (Math.random() > 0.4) {
-        ctx.fillStyle = isRain ? "rgba(95, 60, 36, 0.4)" : "rgba(165, 118, 75, 0.35)";
+      if (Math.random() > 0.35) {
+        ctx.fillStyle = isRain ? "rgba(105, 68, 40, 0.45)" : "rgba(182, 128, 82, 0.45)";
         ctx.beginPath();
-        ctx.ellipse(cx - 0.5, cy - 0.7, rw * 0.5, rh * 0.4, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx - 0.5, cy - 0.8, rw * 0.55, rh * 0.45, 0, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
     // 4. Granulado fino, arenilla y micropartículas de tierra suelta
-    const particleCount = 14000;
+    const particleCount = 15000;
     for (let p = 0; p < particleCount; p++) {
       const px = Math.random() * 512;
       const py = Math.random() * 512;
       const rand = Math.random();
       if (rand < 0.35) {
-        ctx.fillStyle = isRain ? "rgba(14, 7, 3, 0.5)" : "rgba(35, 20, 9, 0.42)";
+        ctx.fillStyle = isRain ? "rgba(12, 6, 2, 0.55)" : "rgba(30, 16, 7, 0.5)";
       } else if (rand < 0.7) {
-        ctx.fillStyle = isRain ? "rgba(72, 45, 26, 0.38)" : "rgba(118, 80, 48, 0.35)";
+        ctx.fillStyle = isRain ? "rgba(80, 48, 28, 0.42)" : "rgba(128, 86, 52, 0.42)";
       } else {
-        ctx.fillStyle = isRain ? "rgba(96, 62, 38, 0.3)" : "rgba(172, 126, 82, 0.38)";
+        ctx.fillStyle = isRain ? "rgba(110, 72, 44, 0.35)" : "rgba(188, 138, 92, 0.45)";
       }
       ctx.fillRect(px, py, Math.random() > 0.7 ? 2 : 1, Math.random() > 0.7 ? 2 : 1);
     }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(75, 75);
+    tex.anisotropy = 8;
+    return tex;
+  }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;

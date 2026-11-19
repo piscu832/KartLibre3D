@@ -403,6 +403,7 @@
       scene.remove(track.trackGroup);
     }
     track = window.buildKartodromoTrack(scene, isRainMode, trackId);
+    setupSkyAndLights(isRainMode);
     currentGridOrder = (currentGridOrder && currentGridOrder.length === 8) ? currentGridOrder : window.RACERS_LIST.slice();
     spawnGrid(currentGridOrder);
     applyTrackUI();
@@ -538,21 +539,27 @@
   }
 
   function setupSkyAndLights(rain) {
+    const curTrackId = appSettings.trackId || "V1";
+    const isV2 = (curTrackId === "V2");
+    const groundHemiColor = isV2
+      ? (rain ? 0x2E1B10 : 0x5C381E)
+      : (rain ? 0x2A3228 : 0x44622B);
+
     if (rain) {
       scene.background = new THREE.Color(0x4E5861);
       scene.fog = new THREE.FogExp2(0x4E5861, 0.0042);
       ambientLight.intensity = 0.72;
       hemiLight.color.setHex(0x8899AA);
-      hemiLight.groundColor.setHex(0x2A3228);
+      hemiLight.groundColor.setHex(groundHemiColor);
       hemiLight.intensity = 0.65;
       sunLight.intensity = 0.78;
       sunLight.color.setHex(0xD0DCE5);
     } else {
       scene.background = new THREE.Color(0x4FA4E8);
-      scene.fog = new THREE.FogExp2(0x8EC5F0, 0.0018);
+      scene.fog = new THREE.FogExp2(isV2 ? 0x82A3BF : 0x8EC5F0, 0.0018);
       ambientLight.intensity = 0.68;
       hemiLight.color.setHex(0xBBE2FF);
-      hemiLight.groundColor.setHex(0x44622B);
+      hemiLight.groundColor.setHex(groundHemiColor);
       hemiLight.intensity = 0.75;
       sunLight.intensity = 1.25;
       sunLight.color.setHex(0xFFF6E0);
@@ -2183,7 +2190,17 @@
     });
 
     if ("serviceWorker" in navigator && (window.location.protocol === "https:" || window.location.hostname === "localhost")) {
-      navigator.serviceWorker.register("./sw.js").catch(() => { });
+      navigator.serviceWorker.register("./sw.js").then((reg) => {
+        reg.update().catch(() => { });
+      }).catch(() => { });
+
+      let isRefreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          window.location.reload();
+        }
+      });
     }
   }
 

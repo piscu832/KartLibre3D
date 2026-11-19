@@ -1,19 +1,19 @@
 // Service Worker oficial de KartLibre 3D para instalación PWA en Android y soporte Offline
-const CACHE_NAME = "kartlibre3d-pwa-v27";
+const CACHE_NAME = "kartlibre3d-pwa-v28";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./src/styles.css?v=27",
-  "./src/three.min.js?v=27",
-  "./src/peerjs.min.js?v=27",
-  "./src/kartModelData.js?v=27",
-  "./src/racersData.js?v=27",
-  "./src/kartFactory.js?v=27",
-  "./src/trackBuilder.js?v=27",
-  "./src/weatherAndAudio.js?v=27",
-  "./src/networkManager.js?v=27",
-  "./src/gameEngine.js?v=27",
+  "./src/styles.css?v=28",
+  "./src/three.min.js?v=28",
+  "./src/peerjs.min.js?v=28",
+  "./src/kartModelData.js?v=28",
+  "./src/racersData.js?v=28",
+  "./src/kartFactory.js?v=28",
+  "./src/trackBuilder.js?v=28",
+  "./src/weatherAndAudio.js?v=28",
+  "./src/networkManager.js?v=28",
+  "./src/gameEngine.js?v=28",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
   "./assets/apple-touch-icon.png",
@@ -50,9 +50,16 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
+  // 1. Para peticiones de navegación y documentos HTML: SIEMPRE Network-First
+  // para que cualquier cambio o actualización se refleje de inmediato sin quedar atrapado en caché vieja
+  const isHtml = event.request.mode === "navigate" ||
+                 url.pathname.endsWith(".html") ||
+                 url.pathname === "/" ||
+                 url.pathname.endsWith("/");
+
+  if (isHtml) {
+    event.respondWith(
+      fetch(event.request)
         .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             const copy = networkResponse.clone();
@@ -60,8 +67,24 @@ self.addEventListener("fetch", (event) => {
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
-      return cachedResponse || fetchPromise;
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // 2. Para otros assets (scripts, css, texturas con ?v=XX): Caché primero con fallback a red
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const copy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return networkResponse;
+      });
     })
   );
 });
