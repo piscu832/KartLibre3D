@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
   <title>KartLibre 3D • Kartódromo Ciudad de Buenos Aires</title>
-  <link rel="stylesheet" href="src/styles.css?v=25" />
+  <link rel="stylesheet" href="src/styles.css?v=26" />
 </head>
 <body>
   <!-- Escena 3D WebGL (Three.js) -->
@@ -56,6 +56,55 @@
         <strong>1 Vuelta de Reconocimiento</strong>, <strong>3 Vueltas de Clasificación</strong> (ordena la grilla) y <strong id="menu-laps-span">20 Vueltas de Carrera Final</strong>.
       </p>
 
+      <!-- Selector Carrusel de Circuitos en Pantalla Principal (Móvil y Escritorio con Flechas Integradas) -->
+      <div class="main-track-carousel-section">
+        <div class="track-carousel-header">
+          <div class="track-header-title-row">
+            <span class="section-label" style="margin:0;">Circuito / Pista de Carrera</span>
+            <span id="menu-track-counter-pill" class="track-counter-pill">Pista 1 de 2</span>
+          </div>
+          <button id="btn-open-tracks-modal" class="pill-mini-btn" title="Ver ficha técnica completa">
+            🗺️ Ver Ficha
+          </button>
+        </div>
+
+        <div class="track-carousel-box" id="track-carousel-container" title="Usa las flechas laterales o desliza para cambiar de pista">
+          <!-- Flecha izquierda sobre la imagen -->
+          <button id="btn-track-prev" class="track-nav-arrow track-nav-prev" title="Pista anterior" aria-label="Pista anterior">
+            ◀
+          </button>
+
+          <!-- Visor de la imagen del circuito -->
+          <div class="track-carousel-viewport">
+            <img id="menu-track-img" src="Pistas/Kartódromo-V1.jpeg" alt="Kartódromo" class="track-carousel-img" />
+            <div class="track-carousel-overlay-info">
+              <div class="track-overlay-left">
+                <span id="menu-track-carousel-title" class="track-overlay-title">Kartódromo V1 • Buenos Aires</span>
+                <span id="menu-track-carousel-subtitle" class="track-overlay-subtitle">10 Curvas &bull; Boxes & Torre &bull; 1.150 m</span>
+              </div>
+              <div class="track-overlay-right">
+                <span id="menu-track-carousel-badge" class="track-card-badge">10 Curvas</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flecha derecha sobre la imagen -->
+          <button id="btn-track-next" class="track-nav-arrow track-nav-next" title="Pista siguiente" aria-label="Pista siguiente">
+            ▶
+          </button>
+        </div>
+
+        <div class="track-carousel-footer">
+          <div class="track-dots-container">
+            <button class="track-dot-btn active" data-track="V1" title="Kartódromo V1 (Bs. As.)"></button>
+            <button class="track-dot-btn" data-track="V2" title="Kartódromo V2 (Llantas Blancas)"></button>
+          </div>
+          <div id="menu-track-desc" class="track-carousel-desc">
+            Circuito clásico con boxes, torre de control y 10 curvas técnicas.
+          </div>
+        </div>
+      </div>
+
       <!-- Modalidad Opcional Multijugador Online (Hasta 8 Usuarios sincronizados sin repetir corredor) -->
       <div id="online-lobby-box" class="online-lobby-box">
         <div class="online-lobby-header">
@@ -86,6 +135,9 @@
       <div>
         <div class="section-label" id="racer-selector-title">Selecciona tu Corredor (8 en Parrilla • Sin Repetir)</div>
         <div id="racer-selector-grid"></div>
+        <button id="btn-start-race-mobile" class="btn-primary-race mobile-only-start-btn" style="margin-top:10px;">
+          🏁 ¡SALIR A PISTA (RECONOCIMIENTO)!
+        </button>
       </div>
 
       <div class="controls-hint">
@@ -97,48 +149,6 @@
     </div>
 
     <div class="menu-panel menu-right">
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <div id="menu-track-title" class="section-label" style="margin:0;">Circuito: Kartódromo Buenos Aires (10 Curvas)</div>
-          <button id="btn-open-tracks-modal" class="pill-mini-btn" title="Abrir ficha técnica y selector de circuitos">
-            🗺️ Ver Ficha
-          </button>
-        </div>
-
-        <!-- Tarjetas interactivas de selección rápida de pista -->
-        <div class="track-card-deck">
-          <div class="track-select-card active" data-track="V1" title="Seleccionar Kartódromo V1">
-            <div class="track-card-img-box">
-              <img src="Pistas/Kartódromo-V1.jpeg" alt="Kartódromo V1" />
-            </div>
-            <div class="track-card-header">
-              <span class="track-card-name">Kartódromo V1</span>
-              <span class="track-card-badge">10 Curvas</span>
-            </div>
-            <div class="track-card-stats">
-              Bs. As. &bull; Boxes & Torre
-            </div>
-          </div>
-
-          <div class="track-select-card" data-track="V2" title="Seleccionar Kartódromo V2">
-            <div class="track-card-img-box">
-              <img src="Pistas/Kartódromo-V2.jpeg" alt="Kartódromo V2" />
-            </div>
-            <div class="track-card-header">
-              <span class="track-card-name">Kartódromo V2</span>
-              <span class="track-card-badge" style="background:#ECEFF1;color:#1E293B;">⚪ Llantas 3x</span>
-            </div>
-            <div class="track-card-stats">
-              Internacional &bull; 11 Curvas
-            </div>
-          </div>
-        </div>
-
-        <div id="menu-track-desc" style="font-size:12px;color:#94A3B8;margin-top:6px;line-height:1.4;">
-          Circuito clásico con boxes, torre de control y 10 curvas técnicas.
-        </div>
-      </div>
-
       <div class="weekend-format-box">
         <div class="section-label" style="margin-bottom:4px;">Cronograma Oficial de Carrera</div>
         <div class="format-steps">
@@ -581,14 +591,14 @@
   </div>
 
   <!-- Scripts del Juego (cargados exclusivamente desde origen local bajo CSP estricto) -->
-  <script src="src/three.min.js?v=25"></script>
-  <script src="src/peerjs.min.js?v=25"></script>
-  <script src="src/kartModelData.js?v=25"></script>
-  <script src="src/racersData.js?v=25"></script>
-  <script src="src/kartFactory.js?v=25"></script>
-  <script src="src/trackBuilder.js?v=25"></script>
-  <script src="src/weatherAndAudio.js?v=25"></script>
-  <script src="src/networkManager.js?v=25"></script>
-  <script src="src/gameEngine.js?v=25"></script>
+  <script src="src/three.min.js?v=26"></script>
+  <script src="src/peerjs.min.js?v=26"></script>
+  <script src="src/kartModelData.js?v=26"></script>
+  <script src="src/racersData.js?v=26"></script>
+  <script src="src/kartFactory.js?v=26"></script>
+  <script src="src/trackBuilder.js?v=26"></script>
+  <script src="src/weatherAndAudio.js?v=26"></script>
+  <script src="src/networkManager.js?v=26"></script>
+  <script src="src/gameEngine.js?v=26"></script>
 </body>
 </html>

@@ -312,7 +312,12 @@
       card.classList.toggle("active", card.getAttribute("data-track") === curTrackId);
     });
 
-    // 3. Elementos en el Modal dedicado de Pistas
+    // 3. Indicadores de puntos (dots) del carrusel de pistas
+    document.querySelectorAll(".track-dot-btn").forEach((dot) => {
+      dot.classList.toggle("active", dot.getAttribute("data-track") === curTrackId);
+    });
+
+    // 4. Elementos en el Modal dedicado de Pistas
     document.querySelectorAll(".track-modal-item").forEach((item) => {
       const isCur = item.getAttribute("data-track") === curTrackId;
       item.classList.toggle("active", isCur);
@@ -331,7 +336,31 @@
       }
     });
 
-    // 4. Encabezado y descripción del menú
+    // 5. Encabezado y carrusel de la pista en pantalla principal (Móvil y Escritorio)
+    const counterPill = document.getElementById("menu-track-counter-pill");
+    if (counterPill) {
+      counterPill.textContent = curTrackId === "V2" ? "Pista 2 de 2" : "Pista 1 de 2";
+    }
+
+    const carouselTitle = document.getElementById("menu-track-carousel-title");
+    if (carouselTitle) {
+      carouselTitle.textContent = trackDef.name;
+    }
+
+    const carouselSubtitle = document.getElementById("menu-track-carousel-subtitle");
+    if (carouselSubtitle) {
+      carouselSubtitle.innerHTML = curTrackId === "V2"
+        ? `${trackDef.cornerCount} Curvas &bull; Llantas Blancas 3x &bull; 1.280 m`
+        : `${trackDef.cornerCount} Curvas &bull; Boxes & Torre &bull; 1.150 m`;
+    }
+
+    const carouselBadge = document.getElementById("menu-track-carousel-badge");
+    if (carouselBadge) {
+      carouselBadge.textContent = curTrackId === "V2" ? "⚪ Llantas 3x" : `${trackDef.cornerCount} Curvas`;
+      carouselBadge.style.background = curTrackId === "V2" ? "#ECEFF1" : "rgba(56, 189, 248, 0.2)";
+      carouselBadge.style.color = curTrackId === "V2" ? "#1E293B" : "#38BDF8";
+    }
+
     const menuLabel = document.getElementById("menu-track-title");
     if (menuLabel) {
       menuLabel.textContent = `Circuito: ${trackDef.name} (${trackDef.cornerCount} Curvas)`;
@@ -339,8 +368,14 @@
 
     const img = document.getElementById("menu-track-img");
     if (img && trackDef.image) {
-      img.src = trackDef.image;
-      img.alt = trackDef.name;
+      img.style.opacity = "0.5";
+      img.style.transform = "scale(0.97)";
+      setTimeout(() => {
+        img.src = trackDef.image;
+        img.alt = trackDef.name;
+        img.style.opacity = "1";
+        img.style.transform = "scale(1)";
+      }, 80);
     }
 
     const desc = document.getElementById("menu-track-desc");
@@ -348,7 +383,7 @@
       desc.textContent = trackDef.description;
     }
 
-    // 5. Etiqueta de circuito en modal de pausa y fin de carrera
+    // 6. Etiqueta de circuito en modal de pausa y fin de carrera
     const pauseInfo = document.getElementById("pause-stage-info");
     if (pauseInfo) {
       pauseInfo.textContent = `${trackDef.name} (${trackDef.cornerCount} Curvas • ${trackDef.hasWhiteTireWalls ? "Llantas Blancas 3x" : "Trazado Clásico"})`;
@@ -1905,6 +1940,11 @@
       btnStart.addEventListener("click", () => startStageSession("RECON"));
     }
 
+    const btnStartMobile = document.getElementById("btn-start-race-mobile");
+    if (btnStartMobile) {
+      btnStartMobile.addEventListener("click", () => startStageSession("RECON"));
+    }
+
     const btnNextStage = document.getElementById("btn-next-stage");
     if (btnNextStage) {
       btnNextStage.addEventListener("click", () => {
@@ -2338,6 +2378,71 @@
     });
   }
 
+  function setupTrackCarouselListeners() {
+    const btnPrev = document.getElementById("btn-track-prev");
+    const btnNext = document.getElementById("btn-track-next");
+
+    function cycleTrack(dir) {
+      const curTrackId = appSettings.trackId || "V1";
+      const nextTrackId = curTrackId === "V1" ? "V2" : "V1";
+      switchTrack(nextTrackId);
+    }
+
+    if (btnPrev) {
+      btnPrev.addEventListener("click", (e) => {
+        e.stopPropagation();
+        cycleTrack(-1);
+      });
+    }
+
+    if (btnNext) {
+      btnNext.addEventListener("click", (e) => {
+        e.stopPropagation();
+        cycleTrack(1);
+      });
+    }
+
+    // Indicadores de puntos (dots)
+    document.querySelectorAll(".track-dot-btn").forEach((dot) => {
+      dot.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const tId = dot.getAttribute("data-track");
+        if (tId) switchTrack(tId);
+      });
+    });
+
+    // Soporte táctil de deslizamiento (Swipe) para pantallas táctiles y dispositivos móviles
+    const carouselBox = document.getElementById("track-carousel-container");
+    if (carouselBox) {
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      carouselBox.addEventListener("touchstart", (e) => {
+        if (e.touches && e.touches.length > 0) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      carouselBox.addEventListener("touchend", (e) => {
+        if (!touchStartX) return;
+        const touchEndX = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches[0].clientX : 0;
+        const touchEndY = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches[0].clientY : 0;
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
+        if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY)) {
+          if (diffX < 0) {
+            cycleTrack(1);
+          } else {
+            cycleTrack(-1);
+          }
+        }
+        touchStartX = 0;
+        touchStartY = 0;
+      }, { passive: true });
+    }
+  }
+
   function setupTrackModalListeners() {
     const modal = document.getElementById("tracks-modal");
     const openBtns = [
@@ -2518,11 +2623,15 @@
             statusText.textContent = message;
             statusText.style.color = isError ? "#FCA5A5" : "#94A3B8";
           }
+          const btnStartMobile = document.getElementById("btn-start-race-mobile");
+          const startLabel = mode === "CLIENT"
+            ? "⏳ ESPERANDO AL ANFITRIÓN DE LA SALA..."
+            : "🏁 ¡SALIR A PISTA (RECONOCIMIENTO)!";
           if (btnStart) {
-            btnStart.textContent =
-              mode === "CLIENT"
-                ? "⏳ ESPERANDO AL ANFITRIÓN DE LA SALA..."
-                : "🏁 ¡SALIR A PISTA (RECONOCIMIENTO)!";
+            btnStart.textContent = startLabel;
+          }
+          if (btnStartMobile) {
+            btnStartMobile.textContent = startLabel;
           }
           buildRacerCardsUI();
         },
@@ -2608,6 +2717,7 @@
     bindControls();
     setupSettingsModalListeners();
     setupTrackModalListeners();
+    setupTrackCarouselListeners();
     applyAllSettings();
 
     try {
