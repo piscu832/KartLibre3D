@@ -695,7 +695,7 @@
 
         k.position.x = THREE.MathUtils.lerp(k.position.x, predX, Math.min(1, dt * 14));
         k.position.z = THREE.MathUtils.lerp(k.position.z, predZ, Math.min(1, dt * 14));
-        k.position.y = 0;
+        k.position.y = 0.04;
         k.heading = lerpAngleShort(k.heading, k.netTarget.heading, Math.min(1, dt * 15));
         k.speed = THREE.MathUtils.lerp(k.speed, k.netTarget.speed, Math.min(1, dt * 12));
         k.steerAngle = THREE.MathUtils.lerp(k.steerAngle, k.netTarget.steerAngle, Math.min(1, dt * 14));
@@ -814,7 +814,7 @@
         const newSample = track.getSampleAtT(k.trackT);
         const nextSample = track.getSampleAtT(k.trackT + 0.007);
         k.position.copy(newSample.pt).addScaledVector(newSample.right, k.lateralOffset);
-        k.position.y = 0;
+        k.position.y = 0.04;
 
         const trackHeading = Math.atan2(newSample.tan.x, newSample.tan.z);
         const nextHeading = Math.atan2(nextSample.tan.x, nextSample.tan.z);
@@ -945,7 +945,7 @@
 
       k.position.x += (fwdX * k.speed + rightX * k.lateralVel) * dt;
       k.position.z += (fwdZ * k.speed + rightZ * k.lateralVel) * dt;
-      k.position.y = onKerb ? Math.sin(raceTime * 48) * 0.016 : 0;
+      k.position.y = onKerb ? (0.04 + Math.sin(raceTime * 48) * 0.016) : 0.04;
 
       const maxOffTrack = track.hasWhiteTireWalls ? (track.trackHalfWidth + 0.95) : (track.trackHalfWidth + 3.0);
       if (Math.abs(trackInfo.lateralOffset) > maxOffTrack) {
@@ -2531,12 +2531,12 @@
     scene = new THREE.Scene();
 
     const isMobile = isMobilePlatform();
-    camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.25, 750);
+    camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.45, 450);
 
     const rendererOpts = {
       antialias: !isMobile,
       powerPreference: "default",
-      precision: isMobile ? "mediump" : "highp",
+      precision: "highp",
       stencil: false,
       depth: true
     };
@@ -2551,6 +2551,7 @@
     const pr = isMobile ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 1.75);
     renderer.setPixelRatio(pr);
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.sortObjects = true;
 
     // Evitar desbordes de memoria en GPUs móviles (evita crash y pantalla blanca [x_x] en Chrome/Android)
     const canUseShadows = !isMobile || (window.innerWidth >= 600 && (navigator.hardwareConcurrency || 4) >= 4);

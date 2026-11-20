@@ -381,16 +381,20 @@
     // 2. Terreno exterior e interior: Tierra removida en Pista V2 / Césped en Pista V1
     const groundTex = isV2 ? createDirtTexture(isRain) : createGrassTexture(isRain);
     const groundMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(1400, 1400),
+      new THREE.PlaneGeometry(1400, 1400, 16, 16),
       new THREE.MeshStandardMaterial({
         map: groundTex,
         roughness: isRain ? (isV2 ? 0.72 : 0.65) : (isV2 ? 0.94 : 0.88),
-        metalness: isV2 ? 0.02 : 0.04
+        metalness: isV2 ? 0.02 : 0.04,
+        polygonOffset: true,
+        polygonOffsetFactor: 4.0,
+        polygonOffsetUnits: 4.0
       })
     );
     groundMesh.rotation.x = -Math.PI / 2;
-    groundMesh.position.y = -0.04;
+    groundMesh.position.y = -0.15;
     groundMesh.receiveShadow = true;
+    groundMesh.renderOrder = 0;
     trackGroup.add(groundMesh);
 
     // 3. Malla continua de Asfalto + Pianitos (Kerbs) Rojos y Blancos
@@ -409,8 +413,8 @@
       const leftEdge = s.pt.clone().addScaledVector(s.right, -TRACK_HALF_WIDTH);
       const rightEdge = s.pt.clone().addScaledVector(s.right, TRACK_HALF_WIDTH);
 
-      roadPositions.push(leftEdge.x, 0.02, leftEdge.z);
-      roadPositions.push(rightEdge.x, 0.02, rightEdge.z);
+      roadPositions.push(leftEdge.x, 0.04, leftEdge.z);
+      roadPositions.push(rightEdge.x, 0.04, rightEdge.z);
       roadNormals.push(0, 1, 0, 0, 1, 0);
 
       const vCoord = (i / SEGMENTS) * 95;
@@ -441,10 +445,10 @@
           const p4 = sNext.pt.clone().addScaledVector(sNext.right, offsetOuter);
 
           kerbPositions.push(
-            p1.x, 0.035, p1.z,
-            p2.x, 0.055, p2.z,
-            p3.x, 0.035, p3.z,
-            p4.x, 0.055, p4.z
+            p1.x, 0.055, p1.z,
+            p2.x, 0.085, p2.z,
+            p3.x, 0.055, p3.z,
+            p4.x, 0.085, p4.z
           );
           for (let k = 0; k < 4; k++) kerbColors.push(cr, cg, cb);
 
@@ -471,10 +475,14 @@
       map: asphaltTex,
       roughness: isRain ? 0.16 : 0.62,
       metalness: isRain ? 0.38 : 0.08,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1.5,
+      polygonOffsetUnits: -1.5
     });
     const roadMesh = new THREE.Mesh(roadGeom, roadMat);
     roadMesh.receiveShadow = true;
+    roadMesh.renderOrder = 1;
     trackGroup.add(roadMesh);
 
     const kerbGeom = new THREE.BufferGeometry();
@@ -484,9 +492,17 @@
     kerbGeom.computeVertexNormals();
     const kerbMesh = new THREE.Mesh(
       kerbGeom,
-      new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45, side: THREE.DoubleSide })
+      new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.45,
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -2.5,
+        polygonOffsetUnits: -2.5
+      })
     );
     kerbMesh.receiveShadow = true;
+    kerbMesh.renderOrder = 2;
     trackGroup.add(kerbMesh);
 
     // 4. Línea de Largada/Llegada a cuadros y Cajones blancos de Grilla
@@ -513,10 +529,16 @@
     }
     const startLineMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(TRACK_HALF_WIDTH * 1.92, 1.8),
-      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(checkCanvas), polygonOffset: true, polygonOffsetFactor: -2 })
+      new THREE.MeshBasicMaterial({
+        map: new THREE.CanvasTexture(checkCanvas),
+        polygonOffset: true,
+        polygonOffsetFactor: -3.5,
+        polygonOffsetUnits: -3.5
+      })
     );
     startLineMesh.rotation.x = -Math.PI / 2;
-    startLineMesh.position.y = 0.032;
+    startLineMesh.position.y = 0.052;
+    startLineMesh.renderOrder = 3;
     gantryGroup.add(startLineMesh);
 
     // Columnas y puente del pórtico
@@ -555,7 +577,12 @@
 
     // Cajones blancos de largada pintados en el asfalto para los 8 corredores (como en la Imagen 1)
     const gridSlots = [];
-    const whiteLineMat = new THREE.MeshBasicMaterial({ color: 0xE6ECF2 });
+    const whiteLineMat = new THREE.MeshBasicMaterial({
+      color: 0xE6ECF2,
+      polygonOffset: true,
+      polygonOffsetFactor: -3.5,
+      polygonOffsetUnits: -3.5
+    });
     for (let rank = 0; rank < 8; rank++) {
       const row = Math.floor(rank / 2);
       const col = rank % 2; // 0 = izquierda, 1 = derecha
@@ -564,22 +591,25 @@
       const lateralOffset = (col === 0 ? -1 : 1) * 2.35 + (col === 1 ? -0.2 : 0.2);
 
       const pos = gs.pt.clone().addScaledVector(gs.right, lateralOffset);
+      pos.y = 0.04;
       const heading = Math.atan2(gs.tan.x, gs.tan.z);
 
       // Pintar el cajón blanco en U sobre el asfalto (exacto a Imagen 1)
       const boxGroup = new THREE.Group();
-      boxGroup.position.set(pos.x, 0.032, pos.z);
+      boxGroup.position.set(pos.x, 0.052, pos.z);
       boxGroup.rotation.y = heading;
 
       const frontBar = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.14), whiteLineMat);
       frontBar.rotation.x = -Math.PI / 2;
       frontBar.position.set(0, 0, 1.35);
+      frontBar.renderOrder = 3;
       boxGroup.add(frontBar);
 
       [-0.98, 0.98].forEach((lx) => {
         const sideBar = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 1.6), whiteLineMat);
         sideBar.rotation.x = -Math.PI / 2;
         sideBar.position.set(lx, 0, 0.6);
+        sideBar.renderOrder = 3;
         boxGroup.add(sideBar);
       });
       trackGroup.add(boxGroup);
@@ -694,7 +724,7 @@
 
         // Lado Izquierdo (-barrierOffset)
         const leftPos = pt.clone().addScaledVector(right, -barrierOffset);
-        dummy.position.set(leftPos.x, 0, leftPos.z);
+        dummy.position.set(leftPos.x, 0.02, leftPos.z);
         dummy.rotation.set(0, angleY + (Math.sin(j * 3.7) * 0.22), 0);
         dummy.scale.set(1.0, 0.98 + (j % 3) * 0.02, 1.0);
         dummy.updateMatrix();
@@ -702,13 +732,14 @@
 
         // Lado Derecho (+barrierOffset)
         const rightPos = pt.clone().addScaledVector(right, barrierOffset);
-        dummy.position.set(rightPos.x, 0, rightPos.z);
+        dummy.position.set(rightPos.x, 0.02, rightPos.z);
         dummy.rotation.set(0, angleY + (Math.cos(j * 4.1) * 0.22), 0);
         dummy.scale.set(1.0, 0.98 + ((j + 1) % 3) * 0.02, 1.0);
         dummy.updateMatrix();
         instancedTires.setMatrixAt(idx++, dummy.matrix);
       }
       instancedTires.instanceMatrix.needsUpdate = true;
+      instancedTires.renderOrder = 4;
       trackGroup.add(instancedTires);
     } else {
       // Circuito clásico V1: Barreras de neumáticos rojos y blancos en curvas + conos
