@@ -5,45 +5,56 @@
   const DEFAULT_PIXEL_SCALE = 0.34;
   const TRACK_HALF_WIDTH = 6.8; // 13.6m de ancho total para permitir sobrepasos entre los 8 karts
 
-  // Textura de asfalto con líneas blancas laterales, huella húmeda y reflejo especular
+  // Textura HD de asfalto de competición con áridos, huellas de goma engomada y líneas de borde
   function createAsphaltTexture(isRain) {
     const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = 1024;
+    canvas.height = 1024;
     const ctx = canvas.getContext("2d");
 
-    ctx.fillStyle = isRain ? "#2A2F37" : "#3A3F47";
-    ctx.fillRect(0, 0, 512, 512);
+    // Asfalto betún oscuro de competición (evita el aspecto lavado y grisáceo)
+    const baseAsphalt = isRain ? "#16191F" : "#242831";
+    ctx.fillStyle = baseAsphalt;
+    ctx.fillRect(0, 0, 1024, 1024);
 
-    // Granulado del asfalto
-    for (let i = 0; i < 18000; i++) {
-      const x = Math.random() * 512;
-      const y = Math.random() * 512;
-      const v = Math.random() > 0.5 ? 255 : 0;
-      ctx.fillStyle = `rgba(${v},${v},${v},${isRain ? 0.055 : 0.045})`;
-      ctx.fillRect(x, y, 2, 2);
+    // 1. Áridos y gravilla mineral en múltiples frecuencias
+    for (let i = 0; i < 45000; i++) {
+      const x = Math.random() * 1024;
+      const y = Math.random() * 1024;
+      const size = Math.random() < 0.85 ? 1 : 2;
+      const shade = Math.random();
+      if (shade > 0.6) {
+        ctx.fillStyle = `rgba(220, 230, 242, ${isRain ? 0.045 : 0.055})`;
+      } else if (shade > 0.25) {
+        ctx.fillStyle = `rgba(10, 12, 16, ${isRain ? 0.09 : 0.08})`;
+      } else {
+        ctx.fillStyle = `rgba(160, 175, 190, ${isRain ? 0.035 : 0.04})`;
+      }
+      ctx.fillRect(x, y, size, size);
     }
 
-    // Huella de caucho más oscura y brillante en el centro
-    const grad = ctx.createLinearGradient(0, 0, 512, 0);
-    grad.addColorStop(0.0, "rgba(0,0,0,0.18)");
-    grad.addColorStop(0.2, "rgba(255,255,255,0.03)");
-    grad.addColorStop(0.5, "rgba(10,14,20,0.22)");
-    grad.addColorStop(0.8, "rgba(255,255,255,0.03)");
-    grad.addColorStop(1.0, "rgba(0,0,0,0.18)");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
+    // 2. Trazada de goma engomada (Racing Line): los karts depositan caucho caliente en el carril de carrera
+    const rubberGrad = ctx.createLinearGradient(0, 0, 1024, 0);
+    rubberGrad.addColorStop(0.00, "rgba(0, 0, 0, 0.22)");
+    rubberGrad.addColorStop(0.18, "rgba(255, 255, 255, 0.02)");
+    rubberGrad.addColorStop(0.32, "rgba(12, 14, 18, 0.40)"); // Huella izquierda engomada
+    rubberGrad.addColorStop(0.50, "rgba(10, 12, 16, 0.28)"); // Centro
+    rubberGrad.addColorStop(0.68, "rgba(12, 14, 18, 0.40)"); // Huella derecha engomada
+    rubberGrad.addColorStop(0.82, "rgba(255, 255, 255, 0.02)");
+    rubberGrad.addColorStop(1.00, "rgba(0, 0, 0, 0.22)");
+    ctx.fillStyle = rubberGrad;
+    ctx.fillRect(0, 0, 1024, 1024);
 
-    // Líneas blancas continuas de borde de pista (como en la Imagen 1)
-    ctx.fillStyle = "#E6ECF2";
-    ctx.fillRect(18, 0, 12, 512);
-    ctx.fillRect(512 - 30, 0, 12, 512);
+    // 3. Líneas blancas continuas de delimitación de pista (pintura de pista FIA)
+    ctx.fillStyle = "#F2F5F8";
+    ctx.fillRect(36, 0, 24, 1024);
+    ctx.fillRect(1024 - 60, 0, 24, 1024);
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.ClampToEdgeWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(1, 95);
-    tex.anisotropy = 8;
+    tex.anisotropy = 16;
     return tex;
   }
 
@@ -591,7 +602,7 @@
       const lateralOffset = (col === 0 ? -1 : 1) * 2.35 + (col === 1 ? -0.2 : 0.2);
 
       const pos = gs.pt.clone().addScaledVector(gs.right, lateralOffset);
-      pos.y = 0.04;
+      pos.y = 0.038;
       const heading = Math.atan2(gs.tan.x, gs.tan.z);
 
       // Pintar el cajón blanco en U sobre el asfalto (exacto a Imagen 1)

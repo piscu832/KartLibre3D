@@ -542,27 +542,27 @@
     const curTrackId = appSettings.trackId || "V1";
     const isV2 = (curTrackId === "V2");
     const groundHemiColor = isV2
-      ? (rain ? 0x2E1B10 : 0x5C381E)
-      : (rain ? 0x2A3228 : 0x44622B);
+      ? (rain ? 0x24160E : 0x482C18)
+      : (rain ? 0x20261E : 0x324820);
 
     if (rain) {
-      scene.background = new THREE.Color(0x4E5861);
-      scene.fog = new THREE.FogExp2(0x4E5861, 0.0042);
-      ambientLight.intensity = 0.72;
-      hemiLight.color.setHex(0x8899AA);
+      scene.background = new THREE.Color(0x384048);
+      scene.fog = new THREE.FogExp2(0x384048, 0.0048);
+      ambientLight.intensity = 0.20;
+      hemiLight.color.setHex(0x76889A);
       hemiLight.groundColor.setHex(groundHemiColor);
-      hemiLight.intensity = 0.65;
-      sunLight.intensity = 0.78;
-      sunLight.color.setHex(0xD0DCE5);
+      hemiLight.intensity = 0.35;
+      sunLight.intensity = 0.85;
+      sunLight.color.setHex(0xB8C8D6);
     } else {
-      scene.background = new THREE.Color(0x4FA4E8);
-      scene.fog = new THREE.FogExp2(isV2 ? 0x82A3BF : 0x8EC5F0, 0.0018);
-      ambientLight.intensity = 0.68;
-      hemiLight.color.setHex(0xBBE2FF);
+      scene.background = new THREE.Color(0x3A86D4);
+      scene.fog = new THREE.FogExp2(isV2 ? 0x7E9EB8 : 0x7CA4D4, 0.0016);
+      ambientLight.intensity = 0.24;
+      hemiLight.color.setHex(0x98CFFF);
       hemiLight.groundColor.setHex(groundHemiColor);
-      hemiLight.intensity = 0.75;
-      sunLight.intensity = 1.25;
-      sunLight.color.setHex(0xFFF6E0);
+      hemiLight.intensity = 0.40;
+      sunLight.intensity = 1.35;
+      sunLight.color.setHex(0xFFF4DE);
     }
   }
 
@@ -695,7 +695,7 @@
 
         k.position.x = THREE.MathUtils.lerp(k.position.x, predX, Math.min(1, dt * 14));
         k.position.z = THREE.MathUtils.lerp(k.position.z, predZ, Math.min(1, dt * 14));
-        k.position.y = 0.04;
+        k.position.y = 0.038;
         k.heading = lerpAngleShort(k.heading, k.netTarget.heading, Math.min(1, dt * 15));
         k.speed = THREE.MathUtils.lerp(k.speed, k.netTarget.speed, Math.min(1, dt * 12));
         k.steerAngle = THREE.MathUtils.lerp(k.steerAngle, k.netTarget.steerAngle, Math.min(1, dt * 14));
@@ -814,7 +814,7 @@
         const newSample = track.getSampleAtT(k.trackT);
         const nextSample = track.getSampleAtT(k.trackT + 0.007);
         k.position.copy(newSample.pt).addScaledVector(newSample.right, k.lateralOffset);
-        k.position.y = 0.04;
+        k.position.y = 0.038;
 
         const trackHeading = Math.atan2(newSample.tan.x, newSample.tan.z);
         const nextHeading = Math.atan2(nextSample.tan.x, nextSample.tan.z);
@@ -945,7 +945,7 @@
 
       k.position.x += (fwdX * k.speed + rightX * k.lateralVel) * dt;
       k.position.z += (fwdZ * k.speed + rightZ * k.lateralVel) * dt;
-      k.position.y = onKerb ? (0.04 + Math.sin(raceTime * 48) * 0.016) : 0.04;
+      k.position.y = onKerb ? (0.055 + Math.sin(raceTime * 48) * 0.016) : 0.038;
 
       const maxOffTrack = track.hasWhiteTireWalls ? (track.trackHalfWidth + 0.95) : (track.trackHalfWidth + 3.0);
       if (Math.abs(trackInfo.lateralOffset) > maxOffTrack) {
@@ -1342,6 +1342,15 @@
       }
       camera.position.copy(smoothCamPos);
       camera.lookAt(smoothCamLook);
+    }
+
+    if (sunLight && playerKart && playerKart.position) {
+      sunLight.target.position.copy(playerKart.position);
+      sunLight.position.set(
+        playerKart.position.x + 28,
+        playerKart.position.y + 48,
+        playerKart.position.z + 22
+      );
     }
   }
 
@@ -2534,8 +2543,8 @@
     camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.45, 450);
 
     const rendererOpts = {
-      antialias: !isMobile,
-      powerPreference: "default",
+      antialias: true,
+      powerPreference: "high-performance",
       precision: "highp",
       stencil: false,
       depth: true
@@ -2548,15 +2557,25 @@
       renderer = new THREE.WebGLRenderer({ antialias: false, stencil: false });
     }
 
-    const pr = isMobile ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 1.75);
+    const pr = Math.min(window.devicePixelRatio || 1, 2.0);
     renderer.setPixelRatio(pr);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.sortObjects = true;
 
-    // Evitar desbordes de memoria en GPUs móviles (evita crash y pantalla blanca [x_x] en Chrome/Android)
-    const canUseShadows = !isMobile || (window.innerWidth >= 600 && (navigator.hardwareConcurrency || 4) >= 4);
+    // ACES Filmic Tone Mapping y Color Space HDR para fidelidad visual cinematográfica
+    if (THREE.ACESFilmicToneMapping) {
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.06;
+    }
+    if (THREE.SRGBColorSpace) {
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+    } else if (THREE.sRGBEncoding) {
+      renderer.outputEncoding = THREE.sRGBEncoding;
+    }
+
+    const canUseShadows = true;
     renderer.shadowMap.enabled = canUseShadows;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap || THREE.PCFShadowMap;
     container.appendChild(renderer.domElement);
 
     // Manejo y recuperación de contexto WebGL para prevenir la pantalla blanca [x_x]
@@ -2581,26 +2600,28 @@
       } catch (err) {}
     }, false);
 
-    ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.7);
+    ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.24);
     scene.add(ambientLight);
 
-    hemiLight = new THREE.HemisphereLight(0x8899AA, 0x2A3228, 0.65);
+    hemiLight = new THREE.HemisphereLight(0x98CFFF, 0x2A3228, 0.40);
     scene.add(hemiLight);
 
-    sunLight = new THREE.DirectionalLight(0xFFF6E0, 0.9);
-    sunLight.position.set(85, 140, 65);
+    sunLight = new THREE.DirectionalLight(0xFFF4DE, 1.35);
+    sunLight.position.set(28, 48, 22);
     sunLight.castShadow = canUseShadows;
-    const shadowMapSize = isMobile ? 512 : 1024;
+    scene.add(sunLight.target);
+
+    const shadowMapSize = isMobile ? 1024 : 2048;
     sunLight.shadow.mapSize.width = shadowMapSize;
     sunLight.shadow.mapSize.height = shadowMapSize;
-    sunLight.shadow.camera.near = 15;
-    sunLight.shadow.camera.far = 380;
-    const d = 140;
+    sunLight.shadow.camera.near = 5;
+    sunLight.shadow.camera.far = 140;
+    const d = 30;
     sunLight.shadow.camera.left = -d;
     sunLight.shadow.camera.right = d;
     sunLight.shadow.camera.top = d;
     sunLight.shadow.camera.bottom = -d;
-    sunLight.shadow.bias = -0.0006;
+    sunLight.shadow.bias = -0.0008;
     scene.add(sunLight);
 
     track = window.buildKartodromoTrack(scene, isRainMode, appSettings.trackId);

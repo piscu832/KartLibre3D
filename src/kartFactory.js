@@ -814,6 +814,55 @@
     return { housingGroup, updateLCD };
   }
 
+  // Textura realista de Sombra de Contacto y Oclusión Ambiental bajo el Kart
+  // Incluye gradiente difuso bajo el chasis y parches oscuros concentrados bajo las 4 ruedas
+  let cachedBlobShadowTexture = null;
+  function getKartBlobShadowTexture() {
+    if (cachedBlobShadowTexture) return cachedBlobShadowTexture;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d");
+
+    // Centro en (256, 256)
+    // 1. Sombra suave del chasis (degradé radial elíptico que se desvanece de forma natural)
+    const chassisGrad = ctx.createRadialGradient(256, 256, 30, 256, 256, 210);
+    chassisGrad.addColorStop(0.00, "rgba(0, 0, 0, 0.78)");
+    chassisGrad.addColorStop(0.28, "rgba(0, 0, 0, 0.54)");
+    chassisGrad.addColorStop(0.58, "rgba(0, 0, 0, 0.26)");
+    chassisGrad.addColorStop(0.82, "rgba(0, 0, 0, 0.08)");
+    chassisGrad.addColorStop(1.00, "rgba(0, 0, 0, 0.00)");
+
+    ctx.fillStyle = chassisGrad;
+    ctx.beginPath();
+    ctx.ellipse(256, 256, 145, 205, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Parches de contacto concentrados bajo las 4 ruedas (contacto directo goma-asfalto)
+    const tireShadows = [
+      { x: 256 - 110, y: 256 - 120, rx: 24, ry: 38 }, // Delantera izquierda
+      { x: 256 + 110, y: 256 - 120, rx: 24, ry: 38 }, // Delantera derecha
+      { x: 256 - 114, y: 256 + 120, rx: 32, ry: 44 }, // Trasera izquierda (más ancha)
+      { x: 256 + 114, y: 256 + 120, rx: 32, ry: 44 }  // Trasera derecha (más ancha)
+    ];
+
+    tireShadows.forEach((ts) => {
+      const tg = ctx.createRadialGradient(ts.x, ts.y, 4, ts.x, ts.y, ts.ry);
+      tg.addColorStop(0.00, "rgba(0, 0, 0, 0.95)");
+      tg.addColorStop(0.35, "rgba(0, 0, 0, 0.70)");
+      tg.addColorStop(0.72, "rgba(0, 0, 0, 0.22)");
+      tg.addColorStop(1.00, "rgba(0, 0, 0, 0.00)");
+      ctx.fillStyle = tg;
+      ctx.beginPath();
+      ctx.ellipse(ts.x, ts.y, ts.rx, ts.ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    cachedBlobShadowTexture = new THREE.CanvasTexture(canvas);
+    return cachedBlobShadowTexture;
+  }
+
   window.createKartInstance = function (racer, options) {
     options = options || {};
     const root = new THREE.Group();
@@ -899,15 +948,15 @@
       side: THREE.DoubleSide
     });
     const matTireRubber = new THREE.MeshStandardMaterial({
-      color: "#16181C",
-      roughness: 0.38,
-      metalness: 0.08,
+      color: "#181A1F",
+      roughness: 0.62,
+      metalness: 0.04,
       side: THREE.DoubleSide
     });
     const matRimAlloy = new THREE.MeshStandardMaterial({
       color: "#22262E",
-      roughness: 0.25,
-      metalness: 0.80,
+      roughness: 0.18,
+      metalness: 0.88,
       side: THREE.DoubleSide
     });
     const matRedSuede = new THREE.MeshStandardMaterial({
@@ -1055,17 +1104,22 @@
     }
     root.add(nameSprite);
 
+    const shadowMat = new THREE.MeshBasicMaterial({
+      map: getKartBlobShadowTexture(),
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -1.0,
+      polygonOffsetUnits: -1.0
+    });
     const shadowPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.75, 2.55),
-      new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        opacity: 0.42,
-        depthWrite: false
-      })
+      new THREE.PlaneGeometry(2.0, 2.75),
+      shadowMat
     );
     shadowPlane.rotation.x = -Math.PI / 2;
-    shadowPlane.position.y = 0.015;
+    shadowPlane.position.set(0, 0.003, 0.04);
+    shadowPlane.renderOrder = 3;
     root.add(shadowPlane);
 
     let wheelSpinAngle = 0;
